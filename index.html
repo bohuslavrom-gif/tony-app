@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Tony</title>
+<meta name="description" content="Tony — aplikace pro sledování kojení">
+<meta name="theme-color" content="#fdf8f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191722" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tony">
+<style>
+  :root {
+    --bg: #fdf8f4;
+    --bg-glow-1: rgba(226, 135, 158, .14);
+    --bg-glow-2: rgba(140, 158, 214, .12);
+    --card: #ffffff;
+    --card-soft: #fffdfb;
+    --text: #38312e;
+    --muted: #9b8f88;
+    --faint: #c4b9b1;
+    --rose: #dd7b95;
+    --rose-deep: #c25a77;
+    --rose-soft: #fceef2;
+    --rose-text: #b2506c;
+    --blue: #8395cc;
+    --blue-deep: #6478b8;
+    --blue-soft: #edf0fa;
+    --blue-text: #5568a5;
+    --border: #f1e8e1;
+    --shadow-sm: 0 1px 3px rgba(95, 70, 60, .05), 0 4px 14px rgba(95, 70, 60, .06);
+    --shadow-lg: 0 4px 10px rgba(95, 70, 60, .07), 0 12px 32px rgba(95, 70, 60, .10);
+    --ring-track: #f3eae4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191722;
+      --bg-glow-1: rgba(226, 135, 158, .09);
+      --bg-glow-2: rgba(131, 149, 204, .08);
+      --card: #232030;
+      --card-soft: #262336;
+      --text: #efe9e4;
+      --muted: #9d929c;
+      --faint: #6d6472;
+      --rose: #dd7b95;
+      --rose-deep: #c25a77;
+      --rose-soft: #3a2733;
+      --rose-text: #eda0b6;
+      --blue: #8395cc;
+      --blue-deep: #6478b8;
+      --blue-soft: #252b40;
+      --blue-text: #aab8e6;
+      --border: #322d40;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.22);
+      --shadow-lg: 0 4px 10px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
+      --ring-track: #302c3e;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 16px; }
+  body {
+    font-family: "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    background-image:
+      radial-gradient(520px 340px at 8% -6%, var(--bg-glow-1), transparent 70%),
+      radial-gradient(520px 340px at 100% 12%, var(--bg-glow-2), transparent 70%);
+    background-attachment: fixed;
+    color: var(--text);
+    min-height: 100vh;
+    padding: max(18px, env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+    max-width: 460px;
+    margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+  }
+  header { text-align: center; margin-bottom: 18px; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+  h1 .heart {
+    display: inline-block;
+    color: var(--rose);
+    font-size: 1.1rem;
+    vertical-align: .18em;
+    margin-left: 2px;
+    animation: beat 2.6s ease-in-out infinite;
+  }
+  @keyframes beat {
+    0%, 100% { transform: scale(1); }
+    12% { transform: scale(1.22); }
+    24% { transform: scale(1); }
+  }
+  .tagline { font-size: .8rem; color: var(--muted); margin-top: 1px; letter-spacing: .01em; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .label {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+  }
+
+  /* ---- Poslední kojení ---- */
+  #lastCard { position: relative; overflow: hidden; }
+  #lastCard::before {
+    content: "";
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--bg-glow-1), transparent 70%);
+    pointer-events: none;
+  }
+  .last-main {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    margin-top: 7px;
+    line-height: 1.1;
+  }
+  .last-detail { margin-top: 9px; font-size: .93rem; color: var(--muted); line-height: 1.5; }
+  .last-detail b { color: var(--text); font-weight: 650; }
+  .pills { margin-top: 10px; display: flex; gap: 7px; flex-wrap: wrap; }
+  .side-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    font-size: .82rem;
+    font-weight: 650;
+  }
+  .side-pill::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+  .pill-L { background: var(--rose-soft); color: var(--rose-text); }
+  .pill-L::before { background: var(--rose); }
+  .pill-P { background: var(--blue-soft); color: var(--blue-text); }
+  .pill-P::before { background: var(--blue); }
+
+  /* ---- Start tlačítka ---- */
+  .start-row { display: flex; gap: 12px; }
+  .btn-side {
+    position: relative;
+    flex: 1;
+    border: none;
+    border-radius: 24px;
+    padding: 28px 10px 24px;
+    font-family: inherit;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    cursor: pointer;
+    color: #fff;
+    box-shadow: var(--shadow-lg);
+    transition: transform .1s ease, box-shadow .1s ease;
+    overflow: hidden;
+  }
+  .btn-side::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120px 70px at 50% -10%, rgba(255,255,255,.35), transparent 70%);
+    pointer-events: none;
+  }
+  .btn-side:active { transform: scale(.96); box-shadow: var(--shadow-sm); }
+  .btn-L { background: linear-gradient(160deg, #e795aa 0%, #d76a87 55%, #c25a77 100%); }
+  .btn-P { background: linear-gradient(160deg, #9dabdc 0%, #7d90c8 55%, #6478b8 100%); }
+  .btn-side small {
+    display: block;
+    font-size: .76rem;
+    font-weight: 550;
+    opacity: .9;
+    margin-top: 6px;
+    letter-spacing: .02em;
+  }
+  .btn-side .reco {
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.28);
+    padding: 3px 9px;
+    border-radius: 99px;
+    display: none;
+    white-space: nowrap;
+  }
+  .btn-side.reco-on .reco { display: block; }
+  .start-hint { text-align: center; font-size: .84rem; color: var(--muted); margin-top: 12px; line-height: 1.45; }
+
+  /* ---- Aktivní kojení ---- */
+  .timer-card { text-align: center; padding: 26px 20px 22px; }
+  .ring-wrap { position: relative; width: 210px; height: 210px; margin: 6px auto 14px; }
+  .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-track { fill: none; stroke: var(--ring-track); stroke-width: 10; }
+  .ring-prog {
+    fill: none;
+    stroke: url(#ringGrad);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .timer-side-label {
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .timer-side-label.on-L { color: var(--rose-text); }
+  .timer-side-label.on-P { color: var(--blue-text); }
+  .breath {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: 1px;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .on-L .breath { background: var(--rose); }
+  .on-P .breath { background: var(--blue); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .45; transform: scale(.75); }
+  }
+  .timer-big {
+    font-size: 3.1rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.03em;
+    line-height: 1.05;
+    margin-top: 3px;
+  }
+  .timer-splits { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
+  .split {
+    flex: 1;
+    max-width: 135px;
+    border-radius: 16px;
+    padding: 10px 6px;
+    font-size: .86rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    border: 2px solid transparent;
+    transition: border-color .2s;
+  }
+  .split-L { background: var(--rose-soft); color: var(--rose-text); }
+  .split-P { background: var(--blue-soft); color: var(--blue-text); }
+  .split.active-L { border-color: var(--rose); }
+  .split.active-P { border-color: var(--blue); }
+  .timer-actions { display: flex; flex-direction: column; gap: 10px; }
+  .btn {
+    border: none;
+    border-radius: 18px;
+    padding: 16px;
+    font-family: inherit;
+    font-size: 1.02rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .1s ease;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-switch { background: var(--blue-soft); color: var(--blue-text); }
+  .btn-switch.to-L { background: var(--rose-soft); color: var(--rose-text); }
+  .btn-stop {
+    background: linear-gradient(160deg, #4a4038, #38312e);
+    color: #fdf8f4;
+    box-shadow: var(--shadow-sm);
+  }
+  @media (prefers-color-scheme: dark) {
+    .btn-stop { background: linear-gradient(160deg, #f2ece7, #ddd4cd); color: #38312e; }
+  }
+  .btn-cancel { background: none; color: var(--muted); font-weight: 550; padding: 8px; font-size: .86rem; }
+
+  /* ---- Denní přehled ---- */
+  .day-stats { display: flex; text-align: center; margin: 14px 0 16px; }
+  .day-stat { flex: 1; position: relative; }
+  .day-stat + .day-stat::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 15%;
+    height: 70%;
+    width: 1px;
+    background: var(--border);
+  }
+  .day-stat .v { font-size: 1.45rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .day-stat .k { font-size: .74rem; color: var(--muted); margin-top: 3px; }
+  .ratio-bar {
+    display: flex;
+    height: 12px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: var(--ring-track);
+  }
+  .ratio-L { background: linear-gradient(90deg, #e795aa, #d76a87); transition: width .4s ease; }
+  .ratio-P { background: linear-gradient(90deg, #7d90c8, #9dabdc); transition: width .4s ease; }
+  .ratio-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: .78rem;
+    color: var(--muted);
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 550;
+  }
+
+  /* ---- Historie ---- */
+  .hist-day {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    margin: 20px 6px 9px;
+  }
+  .hist-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-sm);
+    padding: 13px 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hist-dots { display: flex; flex-direction: column; gap: 3px; }
+  .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ring-track); }
+  .hist-dot.d-L { background: var(--rose); }
+  .hist-dot.d-P { background: var(--blue); }
+  .hist-time { font-weight: 750; font-variant-numeric: tabular-nums; min-width: 50px; }
+  .hist-info { flex: 1; font-size: .87rem; color: var(--muted); line-height: 1.45; }
+  .hist-total { font-weight: 650; color: var(--text); }
+  .hist-del {
+    border: none;
+    background: none;
+    color: var(--faint);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 8px;
+    line-height: 1;
+  }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: .9rem;
+    padding: 30px 10px;
+    line-height: 1.5;
+  }
+  .hidden { display: none !important; }
+  footer { text-align: center; font-size: .74rem; color: var(--faint); margin-top: 26px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Tony <span class="heart">♥</span></h1>
+    <div class="tagline">deníček kojení</div>
+  </header>
+
+  <!-- Poslední kojení -->
+  <div class="card" id="lastCard">
+    <div class="label">Naposledy</div>
+    <div class="last-main" id="lastAgo">—</div>
+    <div class="last-detail" id="lastDetail">Zatím žádný záznam</div>
+    <div class="pills" id="lastPills"></div>
+  </div>
+
+  <!-- Idle: start tlačítka -->
+  <div id="idleView">
+    <div class="start-row">
+      <button class="btn-side btn-L" id="btnStartL" onclick="startFeed('L')"><span class="reco">začít tady</span>Levé<small>klepnutím spustíš stopky</small></button>
+      <button class="btn-side btn-P" id="btnStartP" onclick="startFeed('P')"><span class="reco">začít tady</span>Pravé<small>klepnutím spustíš stopky</small></button>
+    </div>
+    <div class="start-hint" id="startHint"></div>
+  </div>
+
+  <!-- Aktivní kojení -->
+  <div class="card timer-card hidden" id="activeView">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 210 210">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e795aa"/>
+            <stop offset="1" stop-color="#8395cc"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track" cx="105" cy="105" r="96"/>
+        <circle class="ring-prog" id="ringProg" cx="105" cy="105" r="96"/>
+      </svg>
+      <div class="ring-center">
+        <div class="timer-side-label" id="timerSideLabel"><span class="breath"></span><span id="timerSideText"></span></div>
+        <div class="timer-big" id="timerBig">0:00</div>
+      </div>
+    </div>
+    <div class="timer-splits">
+      <div class="split split-L" id="splitL">Levé · 0:00</div>
+      <div class="split split-P" id="splitP">Pravé · 0:00</div>
+    </div>
+    <div class="timer-actions">
+      <button class="btn btn-switch" id="btnSwitch" onclick="switchSide()"></button>
+      <button class="btn btn-stop" onclick="stopFeed()">Ukončit kojení</button>
+      <button class="btn btn-cancel" onclick="cancelFeed()">Zrušit bez uložení</button>
+    </div>
+  </div>
+
+  <!-- Denní přehled -->
+  <div class="card" id="dayCard">
+    <div class="label">Dnes</div>
+    <div class="day-stats">
+      <div class="day-stat"><div class="v" id="dayCount">0</div><div class="k">kojení</div></div>
+      <div class="day-stat"><div class="v" id="dayTotal">0 min</div><div class="k">celkem</div></div>
+      <div class="day-stat"><div class="v" id="dayAvg">—</div><div class="k">průměr</div></div>
+    </div>
+    <div class="ratio-bar" id="ratioBar">
+      <div class="ratio-L" id="ratioL" style="width:0%"></div>
+      <div class="ratio-P" id="ratioP" style="width:0%"></div>
+    </div>
+    <div class="ratio-legend"><span id="legendL">Levé —</span><span id="legendP">Pravé —</span></div>
+  </div>
+
+  <!-- Historie -->
+  <div id="history"></div>
+
+  <footer>Tony · data zůstávají jen v tomto telefonu</footer>
+
+<script>
+"use strict";
+const LS_REC = "kojeni_records_v1";
+const LS_ACT = "kojeni_active_v1";
+const RING_C = 2 * Math.PI * 96;
+
+let records = load(LS_REC, []);
+let active = load(LS_ACT, null);
+
+function load(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) { return fallback; }
+}
+function save(key, val) {
+  try {
+    if (val === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) {}
+}
+
+/* ---------- formátování ---------- */
+function two(n) { return n < 10 ? "0" + n : "" + n; }
+function fmtClock(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ":" + two(s);
+}
+function fmtDur(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.round(sec / 60);
+  if (sec < 60) return sec + " s";
+  if (m < 60) return m + " min";
+  const h = Math.floor(m / 60);
+  return h + " h " + two(m % 60) + " min";
+}
+function fmtAgo(ms) {
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return "právě teď";
+  if (min < 60) return "před " + min + " min";
+  const h = Math.floor(min / 60);
+  if (h < 24) return "před " + h + " h " + two(min % 60) + " min";
+  const d = Math.floor(h / 24);
+  return "před " + d + (d === 1 ? " dnem" : " dny");
+}
+function fmtTime(ts) {
+  const d = new Date(ts);
+  return d.getHours() + ":" + two(d.getMinutes());
+}
+function dayKey(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate());
+}
+function dayLabel(key) {
+  const today = dayKey(Date.now());
+  const yest = dayKey(Date.now() - 864e5);
+  if (key === today) return "Dnes";
+  if (key === yest) return "Včera";
+  const [y, m, d] = key.split("-").map(Number);
+  const names = ["neděle","pondělí","úterý","středa","čtvrtek","pátek","sobota"];
+  const dt = new Date(y, m - 1, d);
+  return names[dt.getDay()] + " " + d + ". " + m + ".";
+}
+
+/* ---------- aktivní kojení ---------- */
+function startFeed(side) {
+  if (active) return;
+  active = { start: Date.now(), side: side, accL: 0, accP: 0, sideStart: Date.now() };
+  save(LS_ACT, active);
+  render();
+}
+function currentAcc() {
+  if (!active) return { L: 0, P: 0 };
+  const run = (Date.now() - active.sideStart) / 1000;
+  return {
+    L: active.accL + (active.side === "L" ? run : 0),
+    P: active.accP + (active.side === "P" ? run : 0)
+  };
+}
+function switchSide() {
+  if (!active) return;
+  const run = (Date.now() - active.sideStart) / 1000;
+  if (active.side === "L") active.accL += run; else active.accP += run;
+  active.side = active.side === "L" ? "P" : "L";
+  active.sideStart = Date.now();
+  save(LS_ACT, active);
+  render();
+}
+function stopFeed() {
+  if (!active) return;
+  const acc = currentAcc();
+  const rec = {
+    id: Date.now() + "" + Math.floor(Math.random() * 1000),
+    start: active.start,
+    end: Date.now(),
+    L: Math.round(acc.L),
+    P: Math.round(acc.P),
+    lastSide: active.side
+  };
+  if (rec.L + rec.P >= 5) {
+    records.push(rec);
+    save(LS_REC, records);
+  }
+  active = null;
+  save(LS_ACT, null);
+  render();
+}
+function cancelFeed() {
+  if (!active) return;
+  if (!confirm("Opravdu zrušit toto měření bez uložení?")) return;
+  active = null;
+  save(LS_ACT, null);
+  render();
+}
+function delRecord(id) {
+  if (!confirm("Smazat tento záznam?")) return;
+  records = records.filter(r => r.id !== id);
+  save(LS_REC, records);
+  render();
+}
+
+/* ---------- render ---------- */
+const $ = id => document.getElementById(id);
+
+function renderLast() {
+  const sorted = records.slice().sort((a, b) => b.start - a.start);
+  const last = sorted[0];
+  $("btnStartL").classList.remove("reco-on");
+  $("btnStartP").classList.remove("reco-on");
+  if (!last) {
+    $("lastAgo").textContent = "—";
+    $("lastDetail").textContent = "Zatím žádný záznam";
+    $("lastPills").innerHTML = "";
+    $("startHint").textContent = "";
+    return;
+  }
+  $("lastAgo").textContent = fmtAgo(Date.now() - last.end);
+  $("lastDetail").innerHTML =
+    "v <b>" + fmtTime(last.start) + "</b> · celkem <b>" + fmtDur(last.L + last.P) + "</b>";
+  const pills = [];
+  if (last.L > 0) pills.push('<span class="side-pill pill-L">levé ' + fmtDur(last.L) + "</span>");
+  if (last.P > 0) pills.push('<span class="side-pill pill-P">pravé ' + fmtDur(last.P) + "</span>");
+  $("lastPills").innerHTML = pills.join("");
+  const next = last.lastSide === "L" ? "P" : "L";
+  $(next === "L" ? "btnStartL" : "btnStartP").classList.add("reco-on");
+  $("startHint").textContent = "Naposledy skončila na " + (last.lastSide === "L" ? "levém" : "pravém") + " prsu.";
+}
+
+function renderActive() {
+  if (!active) {
+    $("activeView").classList.add("hidden");
+    $("idleView").classList.remove("hidden");
+    return;
+  }
+  $("activeView").classList.remove("hidden");
+  $("idleView").classList.add("hidden");
+  const acc = currentAcc();
+  const total = acc.L + acc.P;
+  const lbl = $("timerSideLabel");
+  lbl.classList.toggle("on-L", active.side === "L");
+  lbl.classList.toggle("on-P", active.side === "P");
+  $("timerSideText").textContent = active.side === "L" ? "levé prso" : "pravé prso";
+  $("timerBig").textContent = fmtClock(total);
+  // prstenec: jedno kolečko = 10 minut
+  const frac = (total % 600) / 600;
+  const ring = $("ringProg");
+  ring.style.strokeDasharray = RING_C;
+  ring.style.strokeDashoffset = RING_C * (1 - Math.max(frac, 0.008));
+  $("splitL").textContent = "Levé · " + fmtClock(acc.L);
+  $("splitP").textContent = "Pravé · " + fmtClock(acc.P);
+  $("splitL").classList.toggle("active-L", active.side === "L");
+  $("splitP").classList.toggle("active-P", active.side === "P");
+  const btn = $("btnSwitch");
+  if (active.side === "L") {
+    btn.textContent = "Přepnout na pravé";
+    btn.classList.remove("to-L");
+  } else {
+    btn.textContent = "Přepnout na levé";
+    btn.classList.add("to-L");
+  }
+}
+
+function renderDay() {
+  const today = dayKey(Date.now());
+  const todays = records.filter(r => dayKey(r.start) === today);
+  const totL = todays.reduce((s, r) => s + r.L, 0);
+  const totP = todays.reduce((s, r) => s + r.P, 0);
+  const tot = totL + totP;
+  $("dayCount").textContent = todays.length;
+  $("dayTotal").textContent = tot ? fmtDur(tot) : "0 min";
+  $("dayAvg").textContent = todays.length ? fmtDur(tot / todays.length) : "—";
+  if (tot > 0) {
+    const pL = Math.round((totL / tot) * 100);
+    $("ratioL").style.width = pL + "%";
+    $("ratioP").style.width = (100 - pL) + "%";
+    $("legendL").textContent = "Levé " + fmtDur(totL) + " (" + pL + " %)";
+    $("legendP").textContent = "Pravé " + fmtDur(totP) + " (" + (100 - pL) + " %)";
+  } else {
+    $("ratioL").style.width = "0%";
+    $("ratioP").style.width = "0%";
+    $("legendL").textContent = "Levé —";
+    $("legendP").textContent = "Pravé —";
+  }
+}
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+function renderHistory() {
+  const el = $("history");
+  const sorted = records.slice().sort((a, b) => b.start - a.start).slice(0, 60);
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty">Historie se objeví<br>po prvním uloženém kojení.</div>';
+    return;
+  }
+  let html = "", lastDay = "";
+  for (const r of sorted) {
+    const dk = dayKey(r.start);
+    if (dk !== lastDay) {
+      html += '<div class="hist-day">' + esc(dayLabel(dk)) + "</div>";
+      lastDay = dk;
+    }
+    const parts = [];
+    if (r.L > 0) parts.push("levé " + fmtDur(r.L));
+    if (r.P > 0) parts.push("pravé " + fmtDur(r.P));
+    html +=
+      '<div class="hist-item">' +
+        '<div class="hist-dots">' +
+          '<span class="hist-dot' + (r.L > 0 ? " d-L" : "") + '"></span>' +
+          '<span class="hist-dot' + (r.P > 0 ? " d-P" : "") + '"></span>' +
+        "</div>" +
+        '<div class="hist-time">' + fmtTime(r.start) + "</div>" +
+        '<div class="hist-info"><span class="hist-total">' + fmtDur(r.L + r.P) + "</span> · " + esc(parts.join(" + ")) + "</div>" +
+        '<button class="hist-del" onclick="delRecord(\'' + esc(r.id) + '\')" aria-label="Smazat">✕</button>' +
+      "</div>";
+  }
+  el.innerHTML = html;
+}
+
+function render() {
+  renderLast();
+  renderActive();
+  renderDay();
+  renderHistory();
+}
+
+render();
+setInterval(() => {
+  if (active) renderActive();
+}, 1000);
+setInterval(() => {
+  renderLast();
+  renderDay();
+}, 30000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) render();
+});
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
