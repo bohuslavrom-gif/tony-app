@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>Tony</title>
-<meta name="description" content="Tony — aplikace pro sledování kojení">
+<meta name="description" content="Tony — deníček kojení">
 <meta name="theme-color" content="#fdf8f4" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#191722" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
@@ -19,7 +19,6 @@
     --bg-glow-1: rgba(226, 135, 158, .14);
     --bg-glow-2: rgba(140, 158, 214, .12);
     --card: #ffffff;
-    --card-soft: #fffdfb;
     --text: #38312e;
     --muted: #9b8f88;
     --faint: #c4b9b1;
@@ -37,6 +36,17 @@
     --poo: #b08157;
     --poo-soft: #f4ebe2;
     --poo-text: #86603f;
+    --slp: #9186cc;
+    --slp-soft: #efedf9;
+    --slp-text: #6c60ab;
+    --bot: #5fa8a0;
+    --bot-soft: #e5f2f0;
+    --bot-text: #3f7f78;
+    --grw: #85a35e;
+    --grw-soft: #edf3e3;
+    --grw-text: #5f7a3d;
+    --warn: #c0564f;
+    --warn-soft: #fbeae8;
     --border: #f1e8e1;
     --shadow-sm: 0 1px 3px rgba(95, 70, 60, .05), 0 4px 14px rgba(95, 70, 60, .06);
     --shadow-lg: 0 4px 10px rgba(95, 70, 60, .07), 0 12px 32px rgba(95, 70, 60, .10);
@@ -48,24 +58,25 @@
       --bg-glow-1: rgba(226, 135, 158, .09);
       --bg-glow-2: rgba(131, 149, 204, .08);
       --card: #232030;
-      --card-soft: #262336;
       --text: #efe9e4;
       --muted: #9d929c;
       --faint: #6d6472;
-      --rose: #dd7b95;
-      --rose-deep: #c25a77;
       --rose-soft: #3a2733;
       --rose-text: #eda0b6;
-      --blue: #8395cc;
-      --blue-deep: #6478b8;
       --blue-soft: #252b40;
       --blue-text: #aab8e6;
-      --pee: #dfa63d;
       --pee-soft: #383021;
       --pee-text: #e9c37c;
-      --poo: #b08157;
       --poo-soft: #342b23;
       --poo-text: #d3ab80;
+      --slp-soft: #2b2840;
+      --slp-text: #b6ace6;
+      --bot-soft: #21332f;
+      --bot-text: #8cc9c1;
+      --grw-soft: #2a3221;
+      --grw-text: #adc784;
+      --warn: #e07a72;
+      --warn-soft: #3c2826;
       --border: #322d40;
       --shadow-sm: 0 1px 3px rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.22);
       --shadow-lg: 0 4px 10px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
@@ -88,12 +99,8 @@
     margin: 0 auto;
     -webkit-font-smoothing: antialiased;
   }
-  header { text-align: center; margin-bottom: 18px; }
-  h1 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -.02em;
-  }
+  header { text-align: center; margin-bottom: 18px; position: relative; }
+  h1 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
   h1 .heart {
     display: inline-block;
     color: var(--rose);
@@ -107,8 +114,20 @@
     12% { transform: scale(1.22); }
     24% { transform: scale(1); }
   }
-  .tagline { font-size: .8rem; color: var(--muted); margin-top: 1px; letter-spacing: .01em; }
-
+  .tagline { font-size: .8rem; color: var(--muted); margin-top: 1px; }
+  .gear {
+    position: absolute;
+    right: 0; top: 4px;
+    border: none;
+    background: var(--card);
+    color: var(--muted);
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+  }
   .card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -124,7 +143,6 @@
     letter-spacing: .1em;
     color: var(--muted);
   }
-
   /* ---- Poslední kojení ---- */
   #lastCard { position: relative; overflow: hidden; }
   #lastCard::before {
@@ -136,149 +154,79 @@
     background: radial-gradient(circle, var(--bg-glow-1), transparent 70%);
     pointer-events: none;
   }
-  .last-main {
-    font-size: 1.9rem;
-    font-weight: 800;
-    letter-spacing: -.02em;
-    margin-top: 7px;
-    line-height: 1.1;
-  }
+  .last-main { font-size: 1.9rem; font-weight: 800; letter-spacing: -.02em; margin-top: 7px; line-height: 1.1; }
   .last-detail { margin-top: 9px; font-size: .93rem; color: var(--muted); line-height: 1.5; }
   .last-detail b { color: var(--text); font-weight: 650; }
   .pills { margin-top: 10px; display: flex; gap: 7px; flex-wrap: wrap; }
   .side-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 99px;
-    font-size: .82rem;
-    font-weight: 650;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 99px;
+    font-size: .82rem; font-weight: 650;
   }
-  .side-pill::before {
-    content: "";
-    width: 7px; height: 7px;
-    border-radius: 50%;
-  }
+  .side-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
   .pill-L { background: var(--rose-soft); color: var(--rose-text); }
   .pill-L::before { background: var(--rose); }
   .pill-P { background: var(--blue-soft); color: var(--blue-text); }
   .pill-P::before { background: var(--blue); }
-
+  .remind-note {
+    margin-top: 10px;
+    font-size: .85rem;
+    font-weight: 650;
+    color: var(--warn);
+    background: var(--warn-soft);
+    border-radius: 12px;
+    padding: 9px 12px;
+    display: none;
+  }
   /* ---- Start tlačítka ---- */
   .start-row { display: flex; gap: 12px; }
   .btn-side {
-    position: relative;
-    flex: 1;
-    border: none;
-    border-radius: 24px;
-    padding: 28px 10px 24px;
-    font-family: inherit;
-    font-size: 1.4rem;
-    font-weight: 800;
-    letter-spacing: -.01em;
-    cursor: pointer;
-    color: #fff;
-    box-shadow: var(--shadow-lg);
-    transition: transform .1s ease, box-shadow .1s ease;
-    overflow: hidden;
+    position: relative; flex: 1; border: none; border-radius: 24px;
+    padding: 28px 10px 24px; font-family: inherit;
+    font-size: 1.4rem; font-weight: 800; letter-spacing: -.01em;
+    cursor: pointer; color: #fff; box-shadow: var(--shadow-lg);
+    transition: transform .1s ease; overflow: hidden;
   }
   .btn-side::before {
-    content: "";
-    position: absolute;
-    inset: 0;
+    content: ""; position: absolute; inset: 0;
     background: radial-gradient(120px 70px at 50% -10%, rgba(255,255,255,.35), transparent 70%);
     pointer-events: none;
   }
-  .btn-side:active { transform: scale(.96); box-shadow: var(--shadow-sm); }
+  .btn-side:active { transform: scale(.96); }
   .btn-L { background: linear-gradient(160deg, #e795aa 0%, #d76a87 55%, #c25a77 100%); }
   .btn-P { background: linear-gradient(160deg, #9dabdc 0%, #7d90c8 55%, #6478b8 100%); }
-  .btn-side small {
-    display: block;
-    font-size: .76rem;
-    font-weight: 550;
-    opacity: .9;
-    margin-top: 6px;
-    letter-spacing: .02em;
-  }
+  .btn-side small { display: block; font-size: .76rem; font-weight: 550; opacity: .9; margin-top: 6px; }
   .btn-side .reco {
-    position: absolute;
-    top: 10px; left: 50%;
-    transform: translateX(-50%);
-    font-size: .62rem;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    background: rgba(255,255,255,.28);
-    padding: 3px 9px;
-    border-radius: 99px;
-    display: none;
-    white-space: nowrap;
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    font-size: .62rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    background: rgba(255,255,255,.28); padding: 3px 9px; border-radius: 99px;
+    display: none; white-space: nowrap;
   }
   .btn-side.reco-on .reco { display: block; }
   .start-hint { text-align: center; font-size: .84rem; color: var(--muted); margin-top: 12px; line-height: 1.45; }
-
   /* ---- Aktivní kojení ---- */
   .timer-card { text-align: center; padding: 26px 20px 22px; }
   .ring-wrap { position: relative; width: 210px; height: 210px; margin: 6px auto 14px; }
   .ring-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring-track { fill: none; stroke: var(--ring-track); stroke-width: 10; }
-  .ring-prog {
-    fill: none;
-    stroke: url(#ringGrad);
-    stroke-width: 10;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1s linear;
-  }
-  .ring-center {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  .timer-side-label {
-    font-size: .8rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-  }
+  .ring-prog { fill: none; stroke: url(#ringGrad); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .timer-side-label { font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
   .timer-side-label.on-L { color: var(--rose-text); }
   .timer-side-label.on-P { color: var(--blue-text); }
-  .breath {
-    display: inline-block;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    margin-right: 6px;
-    vertical-align: 1px;
-    animation: pulse 1.6s ease-in-out infinite;
-  }
+  .breath { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; animation: pulse 1.6s ease-in-out infinite; }
   .on-L .breath { background: var(--rose); }
   .on-P .breath { background: var(--blue); }
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: .45; transform: scale(.75); }
   }
-  .timer-big {
-    font-size: 3.1rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -.03em;
-    line-height: 1.05;
-    margin-top: 3px;
-  }
+  .timer-big { font-size: 3.1rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.03em; line-height: 1.05; margin-top: 3px; }
   .timer-splits { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
   .split {
-    flex: 1;
-    max-width: 135px;
-    border-radius: 16px;
-    padding: 10px 6px;
-    font-size: .86rem;
-    font-weight: 650;
-    font-variant-numeric: tabular-nums;
-    border: 2px solid transparent;
-    transition: border-color .2s;
+    flex: 1; max-width: 135px; border-radius: 16px; padding: 10px 6px;
+    font-size: .86rem; font-weight: 650; font-variant-numeric: tabular-nums;
+    border: 2px solid transparent; transition: border-color .2s;
   }
   .split-L { background: var(--rose-soft); color: var(--rose-text); }
   .split-P { background: var(--blue-soft); color: var(--blue-text); }
@@ -286,109 +234,94 @@
   .split.active-P { border-color: var(--blue); }
   .timer-actions { display: flex; flex-direction: column; gap: 10px; }
   .btn {
-    border: none;
-    border-radius: 18px;
-    padding: 16px;
-    font-family: inherit;
-    font-size: 1.02rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform .1s ease;
+    border: none; border-radius: 18px; padding: 16px;
+    font-family: inherit; font-size: 1.02rem; font-weight: 700;
+    cursor: pointer; transition: transform .1s ease;
   }
   .btn:active { transform: scale(.98); }
   .btn-switch { background: var(--blue-soft); color: var(--blue-text); }
   .btn-switch.to-L { background: var(--rose-soft); color: var(--rose-text); }
-  .btn-stop {
-    background: linear-gradient(160deg, #4a4038, #38312e);
-    color: #fdf8f4;
-    box-shadow: var(--shadow-sm);
-  }
+  .btn-stop { background: linear-gradient(160deg, #4a4038, #38312e); color: #fdf8f4; box-shadow: var(--shadow-sm); }
   @media (prefers-color-scheme: dark) {
     .btn-stop { background: linear-gradient(160deg, #f2ece7, #ddd4cd); color: #38312e; }
   }
   .btn-cancel { background: none; color: var(--muted); font-weight: 550; padding: 8px; font-size: .86rem; }
-
-  /* ---- Plínka ---- */
+  /* ---- Spánek ---- */
   .dia-last { margin-top: 8px; font-size: .92rem; color: var(--muted); line-height: 1.45; }
   .dia-last b { color: var(--text); font-weight: 650; }
+  .btn-sleep { width: 100%; margin-top: 13px; background: var(--slp-soft); color: var(--slp-text); }
+  .sleep-run { text-align: center; margin-top: 14px; }
+  .sleep-run .zz {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--slp); margin-right: 7px; vertical-align: 2px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .sleep-run b { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .sleep-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  /* ---- Plínka ---- */
   .dia-row { display: flex; gap: 10px; margin-top: 13px; }
   .btn-dia {
-    flex: 1;
-    border: none;
-    border-radius: 16px;
-    padding: 14px 6px;
-    font-family: inherit;
-    font-size: .95rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform .1s ease;
+    flex: 1; border: none; border-radius: 16px; padding: 14px 6px;
+    font-family: inherit; font-size: .95rem; font-weight: 700;
+    cursor: pointer; transition: transform .1s ease;
   }
   .btn-dia:active { transform: scale(.95); }
   .btn-dia small { display: block; font-size: .7rem; font-weight: 550; opacity: .8; margin-top: 3px; }
   .dia-pee { background: var(--pee-soft); color: var(--pee-text); }
   .dia-poo { background: var(--poo-soft); color: var(--poo-text); }
   .dia-both { background: linear-gradient(115deg, var(--pee-soft) 48%, var(--poo-soft) 52%); color: var(--poo-text); }
+  .dia-bot { background: var(--bot-soft); color: var(--bot-text); }
+  .dia-note { background: var(--border); color: var(--muted); }
+  .dia-grw { background: var(--grw-soft); color: var(--grw-text); }
   .dia-flash {
-    text-align: center;
-    font-size: .84rem;
-    font-weight: 650;
-    color: var(--rose-text);
-    margin-top: 10px;
-    min-height: 1.1em;
+    text-align: center; font-size: .84rem; font-weight: 650;
+    color: var(--rose-text); margin-top: 10px; min-height: 1.1em;
     transition: opacity .4s;
   }
-
   /* ---- Denní přehled ---- */
   .day-stats { display: flex; text-align: center; margin: 14px 0 16px; }
   .day-stat { flex: 1; position: relative; }
   .day-stat + .day-stat::before {
-    content: "";
-    position: absolute;
-    left: 0; top: 15%;
-    height: 70%;
-    width: 1px;
-    background: var(--border);
+    content: ""; position: absolute; left: 0; top: 15%;
+    height: 70%; width: 1px; background: var(--border);
   }
   .day-stat .v { font-size: 1.45rem; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .day-stat .k { font-size: .74rem; color: var(--muted); margin-top: 3px; }
-  .ratio-bar {
-    display: flex;
-    height: 12px;
-    border-radius: 99px;
-    overflow: hidden;
-    background: var(--ring-track);
-  }
+  .ratio-bar { display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: var(--ring-track); }
   .ratio-L { background: linear-gradient(90deg, #e795aa, #d76a87); transition: width .4s ease; }
   .ratio-P { background: linear-gradient(90deg, #7d90c8, #9dabdc); transition: width .4s ease; }
   .ratio-legend {
-    display: flex;
-    justify-content: space-between;
-    font-size: .78rem;
-    color: var(--muted);
-    margin-top: 8px;
-    font-variant-numeric: tabular-nums;
-    font-weight: 550;
+    display: flex; justify-content: space-between;
+    font-size: .78rem; color: var(--muted); margin-top: 8px;
+    font-variant-numeric: tabular-nums; font-weight: 550;
   }
-
+  .dia-day, .slp-day {
+    display: flex; text-align: center;
+    margin-top: 16px; padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .dia-day .day-stat .v, .slp-day .day-stat .v { font-size: 1.25rem; }
+  .dot-lbl { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+  .dot-pee { background: var(--pee); }
+  .dot-poo { background: var(--poo); }
+  .dot-slp { background: var(--slp); }
+  .dot-bot { background: var(--bot); }
+  /* ---- Grafy ---- */
+  .chart-wrap { margin-top: 12px; }
+  .chart-title { font-size: .8rem; font-weight: 650; color: var(--muted); margin: 10px 0 4px; }
+  .chart-wrap svg { width: 100%; height: auto; display: block; }
+  .chart-bar-lbl { font-size: 9px; fill: var(--muted); font-family: inherit; }
+  .chart-val-lbl { font-size: 8.5px; fill: var(--muted); font-family: inherit; font-weight: 600; }
   /* ---- Historie ---- */
   .hist-day {
-    font-size: .72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    color: var(--muted);
-    margin: 20px 6px 9px;
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--muted); margin: 20px 6px 9px;
   }
   .hist-item {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    box-shadow: var(--shadow-sm);
-    padding: 13px 15px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; box-shadow: var(--shadow-sm);
+    padding: 13px 15px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px;
   }
   .hist-dots { display: flex; flex-direction: column; gap: 3px; }
   .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ring-track); }
@@ -396,58 +329,75 @@
   .hist-dot.d-P { background: var(--blue); }
   .hist-dot.d-pee { background: var(--pee); }
   .hist-dot.d-poo { background: var(--poo); }
-  .dia-day {
-    display: flex;
-    text-align: center;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-  }
-  .dia-day .day-stat .v { font-size: 1.25rem; }
-  .dot-lbl {
-    display: inline-block;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    margin-right: 5px;
-    vertical-align: 1px;
-  }
-  .dot-pee { background: var(--pee); }
-  .dot-poo { background: var(--poo); }
+  .hist-dot.d-slp { background: var(--slp); }
+  .hist-dot.d-bot { background: var(--bot); }
+  .hist-dot.d-note { background: var(--faint); }
+  .hist-dot.d-grw { background: var(--grw); }
   .hist-time { font-weight: 750; font-variant-numeric: tabular-nums; min-width: 50px; }
-  .hist-info { flex: 1; font-size: .87rem; color: var(--muted); line-height: 1.45; }
+  .hist-info { flex: 1; font-size: .87rem; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
   .hist-total { font-weight: 650; color: var(--text); }
-  .hist-del {
-    border: none;
-    background: none;
-    color: var(--faint);
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 8px;
-    line-height: 1;
-  }
-  .empty {
-    text-align: center;
-    color: var(--muted);
-    font-size: .9rem;
-    padding: 30px 10px;
-    line-height: 1.5;
-  }
+  .hist-del { border: none; background: none; color: var(--faint); font-size: 1rem; cursor: pointer; padding: 8px; line-height: 1; }
+  .empty { text-align: center; color: var(--muted); font-size: .9rem; padding: 30px 10px; line-height: 1.5; }
   .hidden { display: none !important; }
-  footer { text-align: center; font-size: .74rem; color: var(--faint); margin-top: 26px; }
+  footer { text-align: center; font-size: .74rem; color: var(--faint); margin-top: 26px; line-height: 1.6; }
+  /* ---- Modal ---- */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(30, 20, 25, .45);
+    display: none; align-items: flex-end; justify-content: center;
+    z-index: 50;
+    padding: 0;
+  }
+  .overlay.open { display: flex; }
+  .sheet {
+    background: var(--card);
+    border-radius: 26px 26px 0 0;
+    width: 100%; max-width: 460px;
+    padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+    max-height: 88vh; overflow-y: auto;
+  }
+  .sheet h2 { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
+  .sheet .sub { font-size: .84rem; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
+  .fld { margin-bottom: 13px; }
+  .fld label { display: block; font-size: .8rem; font-weight: 650; color: var(--muted); margin-bottom: 6px; }
+  .fld input[type=number], .fld input[type=text], .fld textarea, .fld select {
+    width: 100%; border: 1.5px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 14px; padding: 12px 14px;
+    font-family: inherit; font-size: 1rem;
+  }
+  .fld textarea { min-height: 84px; resize: vertical; }
+  .ml-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ml-chip {
+    border: none; border-radius: 99px; padding: 9px 15px;
+    background: var(--bot-soft); color: var(--bot-text);
+    font-family: inherit; font-weight: 700; font-size: .9rem; cursor: pointer;
+  }
+  .sheet-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .sheet-actions .btn { flex: 1; }
+  .btn-primary { background: linear-gradient(160deg, #e795aa, #c25a77); color: #fff; }
+  .btn-ghost { background: var(--border); color: var(--muted); }
+  .set-block { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+  .set-block h3 { font-size: .92rem; font-weight: 750; margin-bottom: 8px; }
+  .set-row { display: flex; gap: 8px; margin-top: 8px; }
+  .set-row .btn { flex: 1; padding: 12px; font-size: .9rem; }
+  .sync-status { font-size: .8rem; color: var(--muted); margin-top: 8px; min-height: 1.1em; }
+  .code-input { font-variant-numeric: tabular-nums; letter-spacing: .04em; text-transform: uppercase; }
 </style>
 </head>
 <body>
   <header>
     <h1>Tony <span class="heart">♥</span></h1>
     <div class="tagline">deníček kojení</div>
+    <button class="gear" onclick="openSheet('settings')" aria-label="Nastavení">⚙</button>
   </header>
 
   <!-- Poslední kojení -->
   <div class="card" id="lastCard">
-    <div class="label">Naposledy</div>
+    <div class="label">Naposledy kojení</div>
     <div class="last-main" id="lastAgo">—</div>
     <div class="last-detail" id="lastDetail">Zatím žádný záznam</div>
     <div class="pills" id="lastPills"></div>
+    <div class="remind-note" id="remindNote"></div>
   </div>
 
   <!-- Idle: start tlačítka -->
@@ -460,7 +410,7 @@
   </div>
 
   <!-- Aktivní kojení -->
-  <div class="card timer-card hidden" id="activeView">
+  <div class="card timer-card hidden" id="activeView" style="margin-top:14px">
     <div class="ring-wrap">
       <svg viewBox="0 0 210 210">
         <defs>
@@ -488,6 +438,22 @@
     </div>
   </div>
 
+  <!-- Spánek -->
+  <div class="card" id="sleepCard" style="margin-top:14px">
+    <div class="label">Spánek</div>
+    <div class="dia-last" id="sleepLast">Zatím žádný záznam spánku</div>
+    <div id="sleepIdle">
+      <button class="btn btn-sleep" onclick="startSleep()">Usnul – spustit stopky</button>
+    </div>
+    <div id="sleepActive" class="hidden">
+      <div class="sleep-run"><span class="zz"></span>Spí <b id="sleepTimer">0 s</b></div>
+      <div class="sleep-actions">
+        <button class="btn btn-stop" onclick="stopSleep()">Vzbudil se – uložit</button>
+        <button class="btn btn-cancel" onclick="cancelSleep()">Zrušit bez uložení</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Plínka -->
   <div class="card" id="diaCard">
     <div class="label">Plínka</div>
@@ -498,6 +464,16 @@
       <button class="btn-dia dia-both" onclick="logDiaper(true,true)">Obojí<small>zaznamenat</small></button>
     </div>
     <div class="dia-flash" id="diaFlash"></div>
+  </div>
+
+  <!-- Další záznamy -->
+  <div class="card">
+    <div class="label">Další záznamy</div>
+    <div class="dia-row">
+      <button class="btn-dia dia-bot" onclick="openSheet('bottle')">Lahvička<small>ml mléka</small></button>
+      <button class="btn-dia dia-note" onclick="openSheet('note')">Poznámka<small>text</small></button>
+      <button class="btn-dia dia-grw" onclick="openSheet('growth')">Míry<small>váha a délka</small></button>
+    </div>
   </div>
 
   <!-- Denní přehled -->
@@ -513,6 +489,11 @@
       <div class="ratio-P" id="ratioP" style="width:0%"></div>
     </div>
     <div class="ratio-legend"><span id="legendL">Levé —</span><span id="legendP">Pravé —</span></div>
+    <div class="slp-day">
+      <div class="day-stat"><div class="v" id="slpTotal">—</div><div class="k"><span class="dot-lbl dot-slp"></span>spánek</div></div>
+      <div class="day-stat"><div class="v" id="slpMax">—</div><div class="k">nejdelší</div></div>
+      <div class="day-stat"><div class="v" id="botTotal">—</div><div class="k"><span class="dot-lbl dot-bot"></span>lahvička</div></div>
+    </div>
     <div class="dia-day">
       <div class="day-stat"><div class="v" id="diaCount">0</div><div class="k">přebalení</div></div>
       <div class="day-stat"><div class="v" id="peeCount">0</div><div class="k"><span class="dot-lbl dot-pee"></span>čůral</div></div>
@@ -520,21 +501,129 @@
     </div>
   </div>
 
+  <!-- Týden -->
+  <div class="card" id="weekCard">
+    <div class="label">Posledních 7 dní</div>
+    <div class="chart-wrap">
+      <div class="chart-title">Kojení (minuty za den)</div>
+      <div id="chartFeed"></div>
+      <div class="chart-title">Spánek (hodiny za den)</div>
+      <div id="chartSleep"></div>
+    </div>
+  </div>
+
+  <!-- Růst -->
+  <div class="card hidden" id="growthCard">
+    <div class="label">Růst</div>
+    <div class="dia-last" id="growthLast"></div>
+    <div class="chart-wrap"><div id="chartGrowth"></div></div>
+  </div>
+
   <!-- Historie -->
   <div id="history"></div>
 
-  <footer>Tony · data zůstávají jen v tomto telefonu</footer>
+  <footer id="footerInfo">Tony · data zůstávají jen v tomto telefonu</footer>
+
+  <!-- Modaly -->
+  <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet">
+      <!-- Lahvička -->
+      <div id="sh-bottle" class="hidden">
+        <h2>Lahvička</h2>
+        <div class="sub">Kolik toho vypil? Klepni na množství, nebo zadej vlastní.</div>
+        <div class="ml-row">
+          <button class="ml-chip" onclick="setMl(30)">30 ml</button>
+          <button class="ml-chip" onclick="setMl(60)">60 ml</button>
+          <button class="ml-chip" onclick="setMl(90)">90 ml</button>
+          <button class="ml-chip" onclick="setMl(120)">120 ml</button>
+          <button class="ml-chip" onclick="setMl(150)">150 ml</button>
+        </div>
+        <div class="fld"><label>Množství (ml)</label><input type="number" id="mlInput" min="1" max="500" inputmode="numeric"></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveBottle()">Uložit</button>
+        </div>
+      </div>
+      <!-- Poznámka -->
+      <div id="sh-note" class="hidden">
+        <h2>Poznámka</h2>
+        <div class="sub">Cokoli si chceš zapamatovat — teplota, nálada, první úsměv…</div>
+        <div class="fld"><textarea id="noteInput" placeholder="Napiš poznámku…"></textarea></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveNote()">Uložit</button>
+        </div>
+      </div>
+      <!-- Míry -->
+      <div id="sh-growth" class="hidden">
+        <h2>Váha a délka</h2>
+        <div class="sub">Stačí vyplnit jedno z polí — třeba po vážení u doktora.</div>
+        <div class="fld"><label>Váha (kg)</label><input type="number" id="wInput" step="0.01" min="0" max="30" inputmode="decimal" placeholder="např. 4,25"></div>
+        <div class="fld"><label>Délka (cm)</label><input type="number" id="lInput" step="0.5" min="0" max="120" inputmode="decimal" placeholder="např. 56"></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveGrowth()">Uložit</button>
+        </div>
+      </div>
+      <!-- Nastavení -->
+      <div id="sh-settings" class="hidden">
+        <h2>Nastavení</h2>
+        <div class="set-block" style="border-top:none;padding-top:0;margin-top:6px">
+          <h3>Připomínka kojení</h3>
+          <div class="sub" style="margin-bottom:8px">Zvýrazní upozornění, když od posledního kojení uběhne víc než zvolený čas.</div>
+          <div class="fld"><select id="remindSel">
+            <option value="0">Vypnuto</option>
+            <option value="2">Po 2 hodinách</option>
+            <option value="2.5">Po 2,5 hodinách</option>
+            <option value="3">Po 3 hodinách</option>
+            <option value="4">Po 4 hodinách</option>
+          </select></div>
+        </div>
+        <div class="set-block">
+          <h3>Sdílení mezi telefony</h3>
+          <div class="sub" style="margin-bottom:8px">Zadejte stejný rodinný kód na obou telefonech a záznamy se budou propojovat přes internet. Bez kódu zůstávají data jen v tomto telefonu.</div>
+          <div class="fld"><input type="text" id="famInput" class="code-input" placeholder="rodinný kód" autocapitalize="characters" autocomplete="off"></div>
+          <div class="set-row">
+            <button class="btn btn-ghost" onclick="genFamily()">Vytvořit nový kód</button>
+            <button class="btn btn-primary" onclick="syncNow(true)">Synchronizovat</button>
+          </div>
+          <div class="sync-status" id="syncStatus"></div>
+        </div>
+        <div class="set-block">
+          <h3>Záloha dat</h3>
+          <div class="set-row">
+            <button class="btn btn-ghost" onclick="exportJSON()">Uložit zálohu</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">Obnovit</button>
+          </div>
+          <div class="set-row">
+            <button class="btn btn-ghost" onclick="exportCSV()">Export CSV (pro doktora)</button>
+          </div>
+          <input type="file" id="importFile" accept=".json,application/json" class="hidden" onchange="importJSON(this)">
+        </div>
+        <div class="sheet-actions">
+          <button class="btn btn-primary" onclick="saveSettings()">Hotovo</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
 "use strict";
+/* ============ úložiště ============ */
 const LS_REC = "kojeni_records_v1";
 const LS_ACT = "kojeni_active_v1";
 const LS_DIA = "tony_diapers_v1";
+const LS_SLP = "tony_sleeps_v1";
+const LS_SLA = "tony_sleep_active_v1";
+const LS_BOT = "tony_bottles_v1";
+const LS_NOT = "tony_notes_v1";
+const LS_GRW = "tony_growth_v1";
+const LS_SET = "tony_settings_v1";
+const LS_DEL = "tony_pending_del_v1";
 const RING_C = 2 * Math.PI * 96;
 
-let records = load(LS_REC, []);
-let active = load(LS_ACT, null);
-let diapers = load(LS_DIA, []);
+const SUPA_URL = "https://xrcgxanzbzflvpvmygrd.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhyY2d4YW56YnpmbHZwdm15Z3JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NTQyNTMsImV4cCI6MjA5ODQzMDI1M30.eb03RAbiHxXaNZy_sb4D1B4lDxD-0t8a218EWpqRHoE";
 
 function load(key, fallback) {
   try {
@@ -549,7 +638,20 @@ function save(key, val) {
   } catch (e) {}
 }
 
-/* ---------- formátování ---------- */
+let records = load(LS_REC, []);
+let active = load(LS_ACT, null);
+let diapers = load(LS_DIA, []);
+let sleeps = load(LS_SLP, []);
+let activeSleep = load(LS_SLA, null);
+let bottles = load(LS_BOT, []);
+let notes = load(LS_NOT, []);
+let growth = load(LS_GRW, []);
+let settings = Object.assign({ remindH: 0, family: "" }, load(LS_SET, {}));
+let pendingDel = load(LS_DEL, []);
+
+function uid() { return Date.now() + "" + Math.floor(Math.random() * 100000); }
+
+/* ============ formátování ============ */
 function two(n) { return n < 10 ? "0" + n : "" + n; }
 function fmtClock(sec) {
   sec = Math.max(0, Math.floor(sec));
@@ -577,6 +679,10 @@ function fmtTime(ts) {
   const d = new Date(ts);
   return d.getHours() + ":" + two(d.getMinutes());
 }
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.getDate() + ". " + (d.getMonth() + 1) + ".";
+}
 function dayKey(ts) {
   const d = new Date(ts);
   return d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate());
@@ -591,8 +697,10 @@ function dayLabel(key) {
   const dt = new Date(y, m - 1, d);
   return names[dt.getDay()] + " " + d + ". " + m + ".";
 }
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+const $ = id => document.getElementById(id);
 
-/* ---------- aktivní kojení ---------- */
+/* ============ kojení ============ */
 function startFeed(side) {
   if (active) return;
   active = { start: Date.now(), side: side, accL: 0, accP: 0, sideStart: Date.now() };
@@ -620,16 +728,13 @@ function stopFeed() {
   if (!active) return;
   const acc = currentAcc();
   const rec = {
-    id: Date.now() + "" + Math.floor(Math.random() * 1000),
-    start: active.start,
-    end: Date.now(),
-    L: Math.round(acc.L),
-    P: Math.round(acc.P),
-    lastSide: active.side
+    id: uid(), start: active.start, end: Date.now(),
+    L: Math.round(acc.L), P: Math.round(acc.P), lastSide: active.side
   };
   if (rec.L + rec.P >= 5) {
     records.push(rec);
     save(LS_REC, records);
+    queueSync();
   }
   active = null;
   save(LS_ACT, null);
@@ -642,44 +747,319 @@ function cancelFeed() {
   save(LS_ACT, null);
   render();
 }
-function delRecord(id) {
-  if (!confirm("Smazat tento záznam?")) return;
-  records = records.filter(r => r.id !== id);
-  save(LS_REC, records);
+
+/* ============ spánek ============ */
+function startSleep() {
+  if (activeSleep) return;
+  activeSleep = { start: Date.now() };
+  save(LS_SLA, activeSleep);
+  render();
+}
+function stopSleep() {
+  if (!activeSleep) return;
+  const s = { id: uid(), start: activeSleep.start, end: Date.now() };
+  if (s.end - s.start >= 30000) {
+    sleeps.push(s);
+    save(LS_SLP, sleeps);
+    queueSync();
+  }
+  activeSleep = null;
+  save(LS_SLA, null);
+  render();
+}
+function cancelSleep() {
+  if (!activeSleep) return;
+  if (!confirm("Opravdu zrušit měření spánku bez uložení?")) return;
+  activeSleep = null;
+  save(LS_SLA, null);
   render();
 }
 
-/* ---------- plínky ---------- */
+/* ============ plínky ============ */
 let flashTimer = null;
-function logDiaper(pee, poop) {
-  diapers.push({
-    id: Date.now() + "" + Math.floor(Math.random() * 1000),
-    ts: Date.now(),
-    pee: pee,
-    poop: poop
-  });
-  save(LS_DIA, diapers);
-  render();
-  const f = document.getElementById("diaFlash");
-  f.textContent = "Zaznamenáno ✓";
+function flash(msg) {
+  const f = $("diaFlash");
+  f.textContent = msg;
   f.style.opacity = "1";
   clearTimeout(flashTimer);
   flashTimer = setTimeout(() => { f.style.opacity = "0"; }, 1800);
 }
-function delDiaper(id) {
-  if (!confirm("Smazat tento záznam?")) return;
-  diapers = diapers.filter(d => d.id !== id);
+function logDiaper(pee, poop) {
+  diapers.push({ id: uid(), ts: Date.now(), pee: pee, poop: poop });
   save(LS_DIA, diapers);
+  queueSync();
   render();
+  flash("Zaznamenáno ✓");
 }
 function diaTypeText(d) {
   if (d.pee && d.poop) return "čůral i kakal";
   return d.poop ? "kakal" : "čůral";
 }
 
-/* ---------- render ---------- */
-const $ = id => document.getElementById(id);
+/* ============ mazání (společné) ============ */
+const ARR = {
+  feed: () => records, dia: () => diapers, sleep: () => sleeps,
+  bottle: () => bottles, note: () => notes, growth: () => growth
+};
+const ARR_KEY = { feed: LS_REC, dia: LS_DIA, sleep: LS_SLP, bottle: LS_BOT, note: LS_NOT, growth: LS_GRW };
+function delEvent(kind, id) {
+  if (!confirm("Smazat tento záznam?")) return;
+  const arr = ARR[kind]().filter(x => x.id !== id);
+  if (kind === "feed") records = arr;
+  else if (kind === "dia") diapers = arr;
+  else if (kind === "sleep") sleeps = arr;
+  else if (kind === "bottle") bottles = arr;
+  else if (kind === "note") notes = arr;
+  else if (kind === "growth") growth = arr;
+  save(ARR_KEY[kind], arr);
+  if (settings.family) {
+    pendingDel.push(id);
+    save(LS_DEL, pendingDel);
+  }
+  queueSync();
+  render();
+}
 
+/* ============ modaly ============ */
+function openSheet(name) {
+  ["bottle", "note", "growth", "settings"].forEach(n => $("sh-" + n).classList.toggle("hidden", n !== name));
+  if (name === "settings") {
+    $("remindSel").value = String(settings.remindH || 0);
+    $("famInput").value = settings.family || "";
+    $("syncStatus").textContent = settings.family ? "Sdílení je zapnuté." : "";
+  }
+  if (name === "bottle") $("mlInput").value = "";
+  if (name === "note") $("noteInput").value = "";
+  if (name === "growth") { $("wInput").value = ""; $("lInput").value = ""; }
+  $("overlay").classList.add("open");
+}
+function closeSheet() { $("overlay").classList.remove("open"); }
+
+function setMl(v) { $("mlInput").value = v; }
+function saveBottle() {
+  const ml = parseInt($("mlInput").value, 10);
+  if (!ml || ml < 1) { alert("Zadej množství v ml."); return; }
+  bottles.push({ id: uid(), ts: Date.now(), ml: ml });
+  save(LS_BOT, bottles);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Lahvička " + ml + " ml uložena ✓");
+}
+function saveNote() {
+  const t = $("noteInput").value.trim();
+  if (!t) { alert("Poznámka je prázdná."); return; }
+  notes.push({ id: uid(), ts: Date.now(), text: t.slice(0, 500) });
+  save(LS_NOT, notes);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Poznámka uložena ✓");
+}
+function saveGrowth() {
+  const w = parseFloat(String($("wInput").value).replace(",", "."));
+  const l = parseFloat(String($("lInput").value).replace(",", "."));
+  if (!w && !l) { alert("Vyplň váhu nebo délku."); return; }
+  growth.push({ id: uid(), ts: Date.now(), weight: w || null, length: l || null });
+  save(LS_GRW, growth);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Míry uloženy ✓");
+}
+function saveSettings() {
+  settings.remindH = parseFloat($("remindSel").value) || 0;
+  const fam = $("famInput").value.trim().toUpperCase();
+  const famChanged = fam !== settings.family;
+  settings.family = fam;
+  save(LS_SET, settings);
+  if (settings.remindH > 0 && "Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+  closeSheet();
+  render();
+  if (famChanged && fam) syncNow(true);
+}
+function genFamily() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let c = "";
+  for (let i = 0; i < 10; i++) {
+    if (i === 3 || i === 7) c += "-";
+    c += chars[Math.floor(Math.random() * chars.length)];
+  }
+  $("famInput").value = c;
+}
+
+/* ============ záloha / export ============ */
+function download(name, content, type) {
+  const blob = new Blob([content], { type: type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+function exportJSON() {
+  const data = {
+    app: "tony", version: 3, exported: new Date().toISOString(),
+    records, diapers, sleeps, bottles, notes, growth, settings
+  };
+  const d = new Date();
+  download("tony-zaloha-" + dayKey(d.getTime()) + ".json", JSON.stringify(data, null, 1), "application/json");
+}
+function importJSON(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (data.app !== "tony") { alert("Tohle nevypadá jako záloha Tonyho."); return; }
+      if (!confirm("Přidat záznamy ze zálohy k současným datům?")) return;
+      let added = 0;
+      const mergeArr = (local, incoming, key) => {
+        const ids = new Set(local.map(x => x.id));
+        (incoming || []).forEach(x => {
+          if (x && x.id && !ids.has(x.id)) { local.push(x); added++; }
+        });
+        save(key, local);
+      };
+      mergeArr(records, data.records, LS_REC);
+      mergeArr(diapers, data.diapers, LS_DIA);
+      mergeArr(sleeps, data.sleeps, LS_SLP);
+      mergeArr(bottles, data.bottles, LS_BOT);
+      mergeArr(notes, data.notes, LS_NOT);
+      mergeArr(growth, data.growth, LS_GRW);
+      render();
+      queueSync();
+      alert("Obnoveno. Přidáno " + added + " záznamů.");
+    } catch (e) { alert("Soubor se nepodařilo načíst."); }
+    input.value = "";
+  };
+  reader.readAsText(file);
+}
+function exportCSV() {
+  const rows = [["typ", "datum", "čas", "detail"]];
+  records.forEach(r => rows.push(["kojení", dayKey(r.start), fmtTime(r.start),
+    "celkem " + Math.round((r.L + r.P) / 60) + " min (levé " + Math.round(r.L / 60) + " min, pravé " + Math.round(r.P / 60) + " min)"]));
+  diapers.forEach(d => rows.push(["plínka", dayKey(d.ts), fmtTime(d.ts), diaTypeText(d)]));
+  sleeps.forEach(s => rows.push(["spánek", dayKey(s.start), fmtTime(s.start),
+    "délka " + Math.round((s.end - s.start) / 60000) + " min"]));
+  bottles.forEach(b => rows.push(["lahvička", dayKey(b.ts), fmtTime(b.ts), b.ml + " ml"]));
+  notes.forEach(n => rows.push(["poznámka", dayKey(n.ts), fmtTime(n.ts), n.text.replace(/[\r\n;]+/g, " ")]));
+  growth.forEach(g => rows.push(["míry", dayKey(g.ts), fmtTime(g.ts),
+    (g.weight ? g.weight + " kg" : "") + (g.weight && g.length ? ", " : "") + (g.length ? g.length + " cm" : "")]));
+  rows.sort((a, b) => a === rows[0] ? -1 : (a[1] + a[2]).localeCompare(b[1] + b[2]));
+  const csv = "﻿" + rows.map(r => r.join(";")).join("\r\n");
+  download("tony-export-" + dayKey(Date.now()) + ".csv", csv, "text/csv;charset=utf-8");
+}
+
+/* ============ synchronizace ============ */
+let syncTimer = null;
+function queueSync() {
+  if (!settings.family) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow(false), 2500);
+}
+function collectRows() {
+  const fam = settings.family;
+  const rows = [];
+  records.forEach(r => rows.push({ id: r.id, family: fam, kind: "feed", ts: r.start, data: r }));
+  diapers.forEach(d => rows.push({ id: d.id, family: fam, kind: "dia", ts: d.ts, data: d }));
+  sleeps.forEach(s => rows.push({ id: s.id, family: fam, kind: "sleep", ts: s.start, data: s }));
+  bottles.forEach(b => rows.push({ id: b.id, family: fam, kind: "bottle", ts: b.ts, data: b }));
+  notes.forEach(n => rows.push({ id: n.id, family: fam, kind: "note", ts: n.ts, data: n }));
+  growth.forEach(g => rows.push({ id: g.id, family: fam, kind: "growth", ts: g.ts, data: g }));
+  return rows;
+}
+function applyRemote(remote) {
+  let added = 0;
+  const ids = {};
+  Object.keys(ARR).forEach(k => ARR[k]().forEach(x => ids[x.id] = k));
+  remote.forEach(row => {
+    if (row.deleted) {
+      const k = ids[row.id];
+      if (k) {
+        const arr = ARR[k]().filter(x => x.id !== row.id);
+        if (k === "feed") records = arr;
+        else if (k === "dia") diapers = arr;
+        else if (k === "sleep") sleeps = arr;
+        else if (k === "bottle") bottles = arr;
+        else if (k === "note") notes = arr;
+        else if (k === "growth") growth = arr;
+        save(ARR_KEY[k], arr);
+      }
+      return;
+    }
+    if (ids[row.id] || !row.data || !row.data.id) return;
+    if (row.kind === "feed") { records.push(row.data); save(LS_REC, records); }
+    else if (row.kind === "dia") { diapers.push(row.data); save(LS_DIA, diapers); }
+    else if (row.kind === "sleep") { sleeps.push(row.data); save(LS_SLP, sleeps); }
+    else if (row.kind === "bottle") { bottles.push(row.data); save(LS_BOT, bottles); }
+    else if (row.kind === "note") { notes.push(row.data); save(LS_NOT, notes); }
+    else if (row.kind === "growth") { growth.push(row.data); save(LS_GRW, growth); }
+    else return;
+    ids[row.id] = row.kind;
+    added++;
+  });
+  return added;
+}
+async function syncNow(manual) {
+  const fam = manual ? ($("famInput") ? ($("famInput").value.trim().toUpperCase() || settings.family) : settings.family) : settings.family;
+  if (manual && fam && fam !== settings.family) {
+    settings.family = fam;
+    save(LS_SET, settings);
+  }
+  if (!settings.family) {
+    if (manual) $("syncStatus").textContent = "Nejdřív zadej nebo vytvoř rodinný kód.";
+    return;
+  }
+  const st = $("syncStatus");
+  if (st) st.textContent = "Synchronizuji…";
+  const H = {
+    "apikey": SUPA_KEY,
+    "Authorization": "Bearer " + SUPA_KEY,
+    "Content-Type": "application/json"
+  };
+  try {
+    const rows = collectRows();
+    if (rows.length) {
+      const up = await fetch(SUPA_URL + "/rest/v1/tony_events?on_conflict=id", {
+        method: "POST",
+        headers: Object.assign({ "Prefer": "resolution=merge-duplicates" }, H),
+        body: JSON.stringify(rows)
+      });
+      if (!up.ok) throw new Error("push " + up.status);
+    }
+    if (pendingDel.length) {
+      const tomb = pendingDel.map(id => ({ id: id, family: settings.family, kind: "del", ts: 0, data: {}, deleted: true }));
+      const del = await fetch(SUPA_URL + "/rest/v1/tony_events?on_conflict=id", {
+        method: "POST",
+        headers: Object.assign({ "Prefer": "resolution=merge-duplicates" }, H),
+        body: JSON.stringify(tomb)
+      });
+      if (!del.ok) throw new Error("del " + del.status);
+      pendingDel = [];
+      save(LS_DEL, pendingDel);
+    }
+    const res = await fetch(SUPA_URL + "/rest/v1/tony_events?family=eq." + encodeURIComponent(settings.family) + "&select=id,kind,ts,data,deleted", { headers: H });
+    if (!res.ok) throw new Error("pull " + res.status);
+    const remote = await res.json();
+    const added = applyRemote(remote);
+    render();
+    const now = new Date();
+    lastSyncText = "sdílení zapnuto · synchronizováno " + now.getHours() + ":" + two(now.getMinutes());
+    if (st) st.textContent = "Hotovo" + (added ? " – načteno " + added + " nových záznamů." : ".");
+    renderFooter();
+  } catch (e) {
+    if (st) st.textContent = "Synchronizace se nepovedla — zkontroluj připojení.";
+    lastSyncText = "sdílení zapnuto · zatím nesynchronizováno";
+    renderFooter();
+  }
+}
+let lastSyncText = "";
+
+/* ============ render ============ */
 function renderLast() {
   const sorted = records.slice().sort((a, b) => b.start - a.start);
   const last = sorted[0];
@@ -690,6 +1070,7 @@ function renderLast() {
     $("lastDetail").textContent = "Zatím žádný záznam";
     $("lastPills").innerHTML = "";
     $("startHint").textContent = "";
+    $("remindNote").style.display = "none";
     return;
   }
   $("lastAgo").textContent = fmtAgo(Date.now() - last.end);
@@ -702,6 +1083,26 @@ function renderLast() {
   const next = last.lastSide === "L" ? "P" : "L";
   $(next === "L" ? "btnStartL" : "btnStartP").classList.add("reco-on");
   $("startHint").textContent = "Naposledy skončila na " + (last.lastSide === "L" ? "levém" : "pravém") + " prsu.";
+  // připomínka
+  const rn = $("remindNote");
+  if (settings.remindH > 0 && !active) {
+    const hrs = (Date.now() - last.end) / 3600000;
+    if (hrs > settings.remindH) {
+      rn.textContent = "Od posledního kojení uběhlo víc než " + String(settings.remindH).replace(".", ",") + " h.";
+      rn.style.display = "block";
+      maybeNotify(last.id);
+    } else rn.style.display = "none";
+  } else rn.style.display = "none";
+}
+let notifiedFor = null;
+function maybeNotify(feedId) {
+  if (notifiedFor === feedId) return;
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification("Tony", { body: "Od posledního kojení už uběhlo víc než " + String(settings.remindH).replace(".", ",") + " hodiny." });
+      notifiedFor = feedId;
+    } catch (e) {}
+  }
 }
 
 function renderActive() {
@@ -719,7 +1120,6 @@ function renderActive() {
   lbl.classList.toggle("on-P", active.side === "P");
   $("timerSideText").textContent = active.side === "L" ? "levé prso" : "pravé prso";
   $("timerBig").textContent = fmtClock(total);
-  // prstenec: jedno kolečko = 10 minut
   const frac = (total % 600) / 600;
   const ring = $("ringProg");
   ring.style.strokeDasharray = RING_C;
@@ -735,6 +1135,24 @@ function renderActive() {
   } else {
     btn.textContent = "Přepnout na levé";
     btn.classList.add("to-L");
+  }
+}
+
+function renderSleep() {
+  const lastS = sleeps.slice().sort((a, b) => b.end - a.end)[0];
+  if (activeSleep) {
+    $("sleepIdle").classList.add("hidden");
+    $("sleepActive").classList.remove("hidden");
+    $("sleepTimer").textContent = fmtDur((Date.now() - activeSleep.start) / 1000);
+    $("sleepLast").innerHTML = "usnul v <b>" + fmtTime(activeSleep.start) + "</b>";
+  } else {
+    $("sleepIdle").classList.remove("hidden");
+    $("sleepActive").classList.add("hidden");
+    if (lastS) {
+      $("sleepLast").innerHTML = "naposledy spal <b>" + fmtDur((lastS.end - lastS.start) / 1000) + "</b> · vzbudil se <b>" + fmtAgo(Date.now() - lastS.end) + "</b>";
+    } else {
+      $("sleepLast").textContent = "Zatím žádný záznam spánku";
+    }
   }
 }
 
@@ -773,16 +1191,95 @@ function renderDay() {
   $("diaCount").textContent = todayDia.length;
   $("peeCount").textContent = todayDia.filter(d => d.pee).length;
   $("pooCount").textContent = todayDia.filter(d => d.poop).length;
+  const todaySlp = sleeps.filter(s => dayKey(s.start) === today);
+  const slpSecs = todaySlp.map(s => (s.end - s.start) / 1000);
+  const slpSum = slpSecs.reduce((a, b) => a + b, 0);
+  $("slpTotal").textContent = slpSum ? fmtDur(slpSum) : "—";
+  $("slpMax").textContent = slpSecs.length ? fmtDur(Math.max.apply(null, slpSecs)) : "—";
+  const botSum = bottles.filter(b => dayKey(b.ts) === today).reduce((s, b) => s + b.ml, 0);
+  $("botTotal").textContent = botSum ? botSum + " ml" : "—";
 }
 
-function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+/* ============ grafy ============ */
+function weekDays() {
+  const days = [];
+  const names = ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"];
+  for (let i = 6; i >= 0; i--) {
+    const t = Date.now() - i * 864e5;
+    days.push({ key: dayKey(t), name: names[new Date(t).getDay()] });
+  }
+  return days;
+}
+function barChart(values, labels, color, unit, decimals) {
+  const W = 320, H = 92, top = 14, bottom = 16;
+  const maxV = Math.max.apply(null, values.concat([1]));
+  const bw = 26, gap = (W - 7 * bw) / 8;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">';
+  values.forEach((v, i) => {
+    const x = gap + i * (bw + gap);
+    const h = v > 0 ? Math.max(3, (v / maxV) * (H - top - bottom)) : 2;
+    const y = H - bottom - h;
+    s += '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + h + '" rx="5" fill="' + (v > 0 ? color : "var(--ring-track)") + '"/>';
+    if (v > 0) {
+      const txt = decimals ? v.toFixed(1).replace(".", ",") : Math.round(v);
+      s += '<text class="chart-val-lbl" x="' + (x + bw / 2) + '" y="' + (y - 3.5) + '" text-anchor="middle">' + txt + "</text>";
+    }
+    s += '<text class="chart-bar-lbl" x="' + (x + bw / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + labels[i] + "</text>";
+  });
+  s += "</svg>";
+  return s;
+}
+function renderWeek() {
+  const days = weekDays();
+  const feedMin = days.map(d => Math.round(records.filter(r => dayKey(r.start) === d.key).reduce((s, r) => s + r.L + r.P, 0) / 60));
+  const slpH = days.map(d => sleeps.filter(x => dayKey(x.start) === d.key).reduce((s, x) => s + (x.end - x.start), 0) / 3600000);
+  const labels = days.map(d => d.name);
+  $("chartFeed").innerHTML = barChart(feedMin, labels, "var(--rose)", "min", false);
+  $("chartSleep").innerHTML = barChart(slpH.map(v => Math.round(v * 10) / 10), labels, "var(--slp)", "h", true);
+}
+function renderGrowth() {
+  const card = $("growthCard");
+  const entries = growth.slice().sort((a, b) => a.ts - b.ts);
+  if (!entries.length) { card.classList.add("hidden"); return; }
+  card.classList.remove("hidden");
+  const last = entries[entries.length - 1];
+  const parts = [];
+  if (last.weight) parts.push("<b>" + String(last.weight).replace(".", ",") + " kg</b>");
+  if (last.length) parts.push("<b>" + String(last.length).replace(".", ",") + " cm</b>");
+  $("growthLast").innerHTML = "naposledy " + fmtDate(last.ts) + " · " + parts.join(" · ");
+  const wPts = entries.filter(e => e.weight);
+  if (wPts.length < 2) { $("chartGrowth").innerHTML = ""; return; }
+  const W = 320, H = 110, pad = 22;
+  const t0 = wPts[0].ts, t1 = wPts[wPts.length - 1].ts;
+  const vMin = Math.min.apply(null, wPts.map(p => p.weight));
+  const vMax = Math.max.apply(null, wPts.map(p => p.weight));
+  const X = t => pad + ((t - t0) / Math.max(1, t1 - t0)) * (W - 2 * pad);
+  const Y = v => (H - 22) - ((v - vMin) / Math.max(0.01, vMax - vMin)) * (H - 44);
+  let path = "";
+  wPts.forEach((p, i) => { path += (i ? " L " : "M ") + X(p.ts).toFixed(1) + " " + Y(p.weight).toFixed(1); });
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+  s += '<path d="' + path + '" fill="none" stroke="var(--grw)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+  wPts.forEach(p => {
+    s += '<circle cx="' + X(p.ts).toFixed(1) + '" cy="' + Y(p.weight).toFixed(1) + '" r="4" fill="var(--grw)"/>';
+  });
+  s += '<text class="chart-bar-lbl" x="' + pad + '" y="' + (H - 4) + '">' + fmtDate(t0) + "</text>";
+  s += '<text class="chart-bar-lbl" x="' + (W - pad) + '" y="' + (H - 4) + '" text-anchor="end">' + fmtDate(t1) + "</text>";
+  s += '<text class="chart-val-lbl" x="' + X(wPts[wPts.length - 1].ts).toFixed(1) + '" y="' + (Y(vMax) - 7) + '" text-anchor="end">' + String(vMax).replace(".", ",") + " kg</text>";
+  s += "</svg>";
+  $("chartGrowth").innerHTML = "<div class='chart-title'>Váha</div>" + s;
+}
 
+/* ============ historie ============ */
 function renderHistory() {
   const el = $("history");
-  const events = records.map(r => ({ kind: "feed", ts: r.start, r: r }))
-    .concat(diapers.map(d => ({ kind: "dia", ts: d.ts, d: d })))
+  const events = records.map(r => ({ kind: "feed", ts: r.start, o: r }))
+    .concat(diapers.map(d => ({ kind: "dia", ts: d.ts, o: d })))
+    .concat(sleeps.map(s => ({ kind: "sleep", ts: s.start, o: s })))
+    .concat(bottles.map(b => ({ kind: "bottle", ts: b.ts, o: b })))
+    .concat(notes.map(n => ({ kind: "note", ts: n.ts, o: n })))
+    .concat(growth.map(g => ({ kind: "growth", ts: g.ts, o: g })))
     .sort((a, b) => b.ts - a.ts)
-    .slice(0, 80);
+    .slice(0, 100);
   if (!events.length) {
     el.innerHTML = '<div class="empty">Historie se objeví<br>po prvním záznamu.</div>';
     return;
@@ -794,58 +1291,79 @@ function renderHistory() {
       html += '<div class="hist-day">' + esc(dayLabel(dk)) + "</div>";
       lastDay = dk;
     }
+    let dots = "", info = "";
+    const o = ev.o;
     if (ev.kind === "feed") {
-      const r = ev.r;
       const parts = [];
-      if (r.L > 0) parts.push("levé " + fmtDur(r.L));
-      if (r.P > 0) parts.push("pravé " + fmtDur(r.P));
-      html +=
-        '<div class="hist-item">' +
-          '<div class="hist-dots">' +
-            '<span class="hist-dot' + (r.L > 0 ? " d-L" : "") + '"></span>' +
-            '<span class="hist-dot' + (r.P > 0 ? " d-P" : "") + '"></span>' +
-          "</div>" +
-          '<div class="hist-time">' + fmtTime(r.start) + "</div>" +
-          '<div class="hist-info"><span class="hist-total">Kojení ' + fmtDur(r.L + r.P) + "</span> · " + esc(parts.join(" + ")) + "</div>" +
-          '<button class="hist-del" onclick="delRecord(\'' + esc(r.id) + '\')" aria-label="Smazat">✕</button>' +
-        "</div>";
-    } else {
-      const d = ev.d;
-      html +=
-        '<div class="hist-item">' +
-          '<div class="hist-dots">' +
-            '<span class="hist-dot' + (d.pee ? " d-pee" : "") + '"></span>' +
-            '<span class="hist-dot' + (d.poop ? " d-poo" : "") + '"></span>' +
-          "</div>" +
-          '<div class="hist-time">' + fmtTime(d.ts) + "</div>" +
-          '<div class="hist-info"><span class="hist-total">Plínka</span> · ' + diaTypeText(d) + "</div>" +
-          '<button class="hist-del" onclick="delDiaper(\'' + esc(d.id) + '\')" aria-label="Smazat">✕</button>' +
-        "</div>";
+      if (o.L > 0) parts.push("levé " + fmtDur(o.L));
+      if (o.P > 0) parts.push("pravé " + fmtDur(o.P));
+      dots = '<span class="hist-dot' + (o.L > 0 ? " d-L" : "") + '"></span><span class="hist-dot' + (o.P > 0 ? " d-P" : "") + '"></span>';
+      info = '<span class="hist-total">Kojení ' + fmtDur(o.L + o.P) + "</span> · " + esc(parts.join(" + "));
+    } else if (ev.kind === "dia") {
+      dots = '<span class="hist-dot' + (o.pee ? " d-pee" : "") + '"></span><span class="hist-dot' + (o.poop ? " d-poo" : "") + '"></span>';
+      info = '<span class="hist-total">Plínka</span> · ' + diaTypeText(o);
+    } else if (ev.kind === "sleep") {
+      dots = '<span class="hist-dot d-slp"></span><span class="hist-dot"></span>';
+      info = '<span class="hist-total">Spánek ' + fmtDur((o.end - o.start) / 1000) + "</span> · do " + fmtTime(o.end);
+    } else if (ev.kind === "bottle") {
+      dots = '<span class="hist-dot d-bot"></span><span class="hist-dot"></span>';
+      info = '<span class="hist-total">Lahvička ' + o.ml + " ml</span>";
+    } else if (ev.kind === "note") {
+      dots = '<span class="hist-dot d-note"></span><span class="hist-dot"></span>';
+      info = '<span class="hist-total">Poznámka</span> · ' + esc(o.text);
+    } else if (ev.kind === "growth") {
+      const parts = [];
+      if (o.weight) parts.push(String(o.weight).replace(".", ",") + " kg");
+      if (o.length) parts.push(String(o.length).replace(".", ",") + " cm");
+      dots = '<span class="hist-dot d-grw"></span><span class="hist-dot"></span>';
+      info = '<span class="hist-total">Míry</span> · ' + esc(parts.join(" · "));
     }
+    html +=
+      '<div class="hist-item">' +
+        '<div class="hist-dots">' + dots + "</div>" +
+        '<div class="hist-time">' + fmtTime(ev.ts) + "</div>" +
+        '<div class="hist-info">' + info + "</div>" +
+        '<button class="hist-del" onclick="delEvent(\'' + ev.kind + '\',\'' + esc(o.id) + '\')" aria-label="Smazat">✕</button>' +
+      "</div>";
   }
   el.innerHTML = html;
+}
+
+function renderFooter() {
+  $("footerInfo").textContent = "Tony · " + (settings.family ? lastSyncText || "sdílení zapnuto" : "data zůstávají jen v tomto telefonu");
 }
 
 function render() {
   renderLast();
   renderActive();
+  renderSleep();
   renderDiaper();
   renderDay();
+  renderWeek();
+  renderGrowth();
   renderHistory();
+  renderFooter();
 }
 
 render();
 setInterval(() => {
   if (active) renderActive();
+  if (activeSleep) renderSleep();
 }, 1000);
 setInterval(() => {
   renderLast();
   renderDiaper();
+  renderSleep();
   renderDay();
 }, 30000);
+setInterval(() => { if (settings.family) syncNow(false); }, 180000);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) render();
+  if (!document.hidden) {
+    render();
+    if (settings.family) syncNow(false);
+  }
 });
+if (settings.family) syncNow(false);
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
