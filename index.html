@@ -45,6 +45,9 @@
     --grw: #85a35e;
     --grw-soft: #edf3e3;
     --grw-text: #5f7a3d;
+    --cry: #cf7a67;
+    --cry-soft: #faeae5;
+    --cry-text: #a25541;
     --warn: #c0564f;
     --warn-soft: #fbeae8;
     --border: #f1e8e1;
@@ -75,6 +78,8 @@
       --bot-text: #8cc9c1;
       --grw-soft: #2a3221;
       --grw-text: #adc784;
+      --cry-soft: #3a2823;
+      --cry-text: #e5a08d;
       --warn: #e07a72;
       --warn-soft: #3c2826;
       --border: #322d40;
@@ -273,6 +278,29 @@
   .dia-bot { background: var(--bot-soft); color: var(--bot-text); }
   .dia-note { background: var(--border); color: var(--muted); }
   .dia-grw { background: var(--grw-soft); color: var(--grw-text); }
+  .dia-cry { background: var(--cry-soft); color: var(--cry-text); }
+  .extra-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 13px; }
+  .link-center { text-align: center; margin-top: 8px; }
+  .link-btn {
+    border: none; background: none; color: var(--muted);
+    font-family: inherit; font-size: .82rem; font-weight: 600;
+    text-decoration: underline; cursor: pointer; padding: 6px;
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .chip {
+    border: 1.5px solid var(--border); background: var(--bg); color: var(--muted);
+    border-radius: 99px; padding: 10px 15px;
+    font-family: inherit; font-weight: 650; font-size: .9rem; cursor: pointer;
+  }
+  .chip.on { border-color: var(--rose); color: var(--rose-text); background: var(--rose-soft); }
+  .syncbtn {
+    position: absolute; left: 0; top: 4px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    width: 38px; height: 38px; border-radius: 12px;
+    font-size: 1.05rem; cursor: pointer; box-shadow: var(--shadow-sm);
+  }
+  .syncbtn.spin { animation: rot 1s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
   .dia-flash {
     text-align: center; font-size: .84rem; font-weight: 650;
     color: var(--rose-text); margin-top: 10px; min-height: 1.1em;
@@ -333,6 +361,8 @@
   .hist-dot.d-bot { background: var(--bot); }
   .hist-dot.d-note { background: var(--faint); }
   .hist-dot.d-grw { background: var(--grw); }
+  .hist-dot.d-cry { background: var(--cry); }
+  .dot-cry { background: var(--cry); }
   .hist-time { font-weight: 750; font-variant-numeric: tabular-nums; min-width: 50px; }
   .hist-info { flex: 1; font-size: .87rem; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
   .hist-total { font-weight: 650; color: var(--text); }
@@ -388,6 +418,7 @@
   <header>
     <h1>Tony <span class="heart">♥</span></h1>
     <div class="tagline">deníček kojení</div>
+    <button class="syncbtn hidden" id="syncBtn" onclick="manualSync()" aria-label="Synchronizovat">⟳</button>
     <button class="gear" onclick="openSheet('settings')" aria-label="Nastavení">⚙</button>
   </header>
 
@@ -407,6 +438,7 @@
       <button class="btn-side btn-P" id="btnStartP" onclick="startFeed('P')"><span class="reco">začít tady</span>Pravé<small>klepnutím spustíš stopky</small></button>
     </div>
     <div class="start-hint" id="startHint"></div>
+    <div class="link-center"><button class="link-btn" onclick="openSheet('feedman')">Zapsat kojení zpětně…</button></div>
   </div>
 
   <!-- Aktivní kojení -->
@@ -444,6 +476,7 @@
     <div class="dia-last" id="sleepLast">Zatím žádný záznam spánku</div>
     <div id="sleepIdle">
       <button class="btn btn-sleep" onclick="startSleep()">Usnul – spustit stopky</button>
+      <div class="link-center"><button class="link-btn" onclick="openSheet('sleepman')">Zapsat spánek zpětně…</button></div>
     </div>
     <div id="sleepActive" class="hidden">
       <div class="sleep-run"><span class="zz"></span>Spí <b id="sleepTimer">0 s</b></div>
@@ -463,13 +496,15 @@
       <button class="btn-dia dia-poo" onclick="logDiaper(false,true)">Kakal<small>zaznamenat</small></button>
       <button class="btn-dia dia-both" onclick="logDiaper(true,true)">Obojí<small>zaznamenat</small></button>
     </div>
+    <div class="link-center"><button class="link-btn" onclick="openSheet('diaman')">Zapsat zpětně…</button></div>
     <div class="dia-flash" id="diaFlash"></div>
   </div>
 
   <!-- Další záznamy -->
   <div class="card">
     <div class="label">Další záznamy</div>
-    <div class="dia-row">
+    <div class="extra-grid">
+      <button class="btn-dia dia-cry" onclick="openSheet('cry')">Pláč<small>co pomohlo</small></button>
       <button class="btn-dia dia-bot" onclick="openSheet('bottle')">Lahvička<small>ml mléka</small></button>
       <button class="btn-dia dia-note" onclick="openSheet('note')">Poznámka<small>text</small></button>
       <button class="btn-dia dia-grw" onclick="openSheet('growth')">Míry<small>váha a délka</small></button>
@@ -498,6 +533,10 @@
       <div class="day-stat"><div class="v" id="diaCount">0</div><div class="k">přebalení</div></div>
       <div class="day-stat"><div class="v" id="peeCount">0</div><div class="k"><span class="dot-lbl dot-pee"></span>čůral</div></div>
       <div class="day-stat"><div class="v" id="pooCount">0</div><div class="k"><span class="dot-lbl dot-poo"></span>kakal</div></div>
+    </div>
+    <div class="dia-day">
+      <div class="day-stat"><div class="v" id="cryCount">0</div><div class="k"><span class="dot-lbl dot-cry"></span>pláč</div></div>
+      <div class="day-stat" style="flex:2"><div class="v" id="cryTop">—</div><div class="k">nejčastěji pomohlo</div></div>
     </div>
   </div>
 
@@ -539,9 +578,65 @@
           <button class="ml-chip" onclick="setMl(150)">150 ml</button>
         </div>
         <div class="fld"><label>Množství (ml)</label><input type="number" id="mlInput" min="1" max="500" inputmode="numeric"></div>
+        <div class="fld"><label>Kdy</label><input type="datetime-local" id="mlTime"></div>
         <div class="sheet-actions">
           <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
           <button class="btn btn-primary" onclick="saveBottle()">Uložit</button>
+        </div>
+      </div>
+      <!-- Pláč -->
+      <div id="sh-cry" class="hidden">
+        <h2>Pláč</h2>
+        <div class="sub">Co nakonec pomohlo?</div>
+        <div class="chip-row" id="cryChips">
+          <button class="chip" data-c="hlad" onclick="setCryCause('hlad')">Hlad</button>
+          <button class="chip" data-c="nadymani" onclick="setCryCause('nadymani')">Nadýmání</button>
+          <button class="chip" data-c="plinka" onclick="setCryCause('plinka')">Přebalení</button>
+          <button class="chip" data-c="styskani" onclick="setCryCause('styskani')">Stýskání</button>
+          <button class="chip" data-c="nevime" onclick="setCryCause('nevime')">Nevíme</button>
+        </div>
+        <div class="fld"><label>Kdy</label><input type="datetime-local" id="cryTime"></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveCry()">Uložit</button>
+        </div>
+      </div>
+      <!-- Kojení zpětně -->
+      <div id="sh-feedman" class="hidden">
+        <h2>Kojení zpětně</h2>
+        <div class="sub">Zapiš kojení, které proběhlo bez stopek.</div>
+        <div class="fld"><label>Začátek</label><input type="datetime-local" id="feedTime"></div>
+        <div class="fld"><label>Levé prso (minut)</label><input type="number" id="feedL" min="0" max="120" inputmode="numeric" placeholder="0"></div>
+        <div class="fld"><label>Pravé prso (minut)</label><input type="number" id="feedP" min="0" max="120" inputmode="numeric" placeholder="0"></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveFeedManual()">Uložit</button>
+        </div>
+      </div>
+      <!-- Spánek zpětně -->
+      <div id="sh-sleepman" class="hidden">
+        <h2>Spánek zpětně</h2>
+        <div class="sub">Zapiš spánek, který proběhl bez stopek.</div>
+        <div class="fld"><label>Usnul</label><input type="datetime-local" id="slpFrom"></div>
+        <div class="fld"><label>Vzbudil se</label><input type="datetime-local" id="slpTo"></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveSleepManual()">Uložit</button>
+        </div>
+      </div>
+      <!-- Plínka zpětně -->
+      <div id="sh-diaman" class="hidden">
+        <h2>Plínka zpětně</h2>
+        <div class="sub">Co bylo v plínce?</div>
+        <div class="chip-row" id="diaChips">
+          <button class="chip" data-c="pee" onclick="setDiaType('pee')">Čůral</button>
+          <button class="chip" data-c="poo" onclick="setDiaType('poo')">Kakal</button>
+          <button class="chip" data-c="both" onclick="setDiaType('both')">Obojí</button>
+        </div>
+        <div class="fld"><label>Kdy</label><input type="datetime-local" id="diaTime"></div>
+        <div class="sheet-actions">
+          <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
+          <button class="btn btn-primary" onclick="saveDiaManual()">Uložit</button>
         </div>
       </div>
       <!-- Poznámka -->
@@ -549,6 +644,7 @@
         <h2>Poznámka</h2>
         <div class="sub">Cokoli si chceš zapamatovat — teplota, nálada, první úsměv…</div>
         <div class="fld"><textarea id="noteInput" placeholder="Napiš poznámku…"></textarea></div>
+        <div class="fld"><label>Kdy</label><input type="datetime-local" id="noteTime"></div>
         <div class="sheet-actions">
           <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
           <button class="btn btn-primary" onclick="saveNote()">Uložit</button>
@@ -560,6 +656,7 @@
         <div class="sub">Stačí vyplnit jedno z polí — třeba po vážení u doktora.</div>
         <div class="fld"><label>Váha (kg)</label><input type="number" id="wInput" step="0.01" min="0" max="30" inputmode="decimal" placeholder="např. 4,25"></div>
         <div class="fld"><label>Délka (cm)</label><input type="number" id="lInput" step="0.5" min="0" max="120" inputmode="decimal" placeholder="např. 56"></div>
+        <div class="fld"><label>Kdy</label><input type="datetime-local" id="grwTime"></div>
         <div class="sheet-actions">
           <button class="btn btn-ghost" onclick="closeSheet()">Zrušit</button>
           <button class="btn btn-primary" onclick="saveGrowth()">Uložit</button>
@@ -618,6 +715,7 @@ const LS_SLA = "tony_sleep_active_v1";
 const LS_BOT = "tony_bottles_v1";
 const LS_NOT = "tony_notes_v1";
 const LS_GRW = "tony_growth_v1";
+const LS_CRY = "tony_cries_v1";
 const LS_SET = "tony_settings_v1";
 const LS_DEL = "tony_pending_del_v1";
 const RING_C = 2 * Math.PI * 96;
@@ -646,7 +744,9 @@ let activeSleep = load(LS_SLA, null);
 let bottles = load(LS_BOT, []);
 let notes = load(LS_NOT, []);
 let growth = load(LS_GRW, []);
+let cries = load(LS_CRY, []);
 let settings = Object.assign({ remindH: 0, family: "" }, load(LS_SET, {}));
+const CAUSE_TXT = { hlad: "hlad", nadymani: "nadýmání", plinka: "přebalení", styskani: "stýskání", nevime: "nevíme" };
 let pendingDel = load(LS_DEL, []);
 
 function uid() { return Date.now() + "" + Math.floor(Math.random() * 100000); }
@@ -699,6 +799,16 @@ function dayLabel(key) {
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 const $ = id => document.getElementById(id);
+function dtValue(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate()) + "T" + two(d.getHours()) + ":" + two(d.getMinutes());
+}
+function parseDt(id) {
+  const v = $(id).value;
+  if (!v) return null;
+  const t = new Date(v).getTime();
+  return isNaN(t) ? null : t;
+}
 
 /* ============ kojení ============ */
 function startFeed(side) {
@@ -799,18 +909,22 @@ function diaTypeText(d) {
 /* ============ mazání (společné) ============ */
 const ARR = {
   feed: () => records, dia: () => diapers, sleep: () => sleeps,
-  bottle: () => bottles, note: () => notes, growth: () => growth
+  bottle: () => bottles, note: () => notes, growth: () => growth, cry: () => cries
 };
-const ARR_KEY = { feed: LS_REC, dia: LS_DIA, sleep: LS_SLP, bottle: LS_BOT, note: LS_NOT, growth: LS_GRW };
-function delEvent(kind, id) {
-  if (!confirm("Smazat tento záznam?")) return;
-  const arr = ARR[kind]().filter(x => x.id !== id);
+const ARR_KEY = { feed: LS_REC, dia: LS_DIA, sleep: LS_SLP, bottle: LS_BOT, note: LS_NOT, growth: LS_GRW, cry: LS_CRY };
+function setArr(kind, arr) {
   if (kind === "feed") records = arr;
   else if (kind === "dia") diapers = arr;
   else if (kind === "sleep") sleeps = arr;
   else if (kind === "bottle") bottles = arr;
   else if (kind === "note") notes = arr;
   else if (kind === "growth") growth = arr;
+  else if (kind === "cry") cries = arr;
+}
+function delEvent(kind, id) {
+  if (!confirm("Smazat tento záznam?")) return;
+  const arr = ARR[kind]().filter(x => x.id !== id);
+  setArr(kind, arr);
   save(ARR_KEY[kind], arr);
   if (settings.family) {
     pendingDel.push(id);
@@ -821,25 +935,40 @@ function delEvent(kind, id) {
 }
 
 /* ============ modaly ============ */
+let diaType = "pee", cryCause = null;
 function openSheet(name) {
-  ["bottle", "note", "growth", "settings"].forEach(n => $("sh-" + n).classList.toggle("hidden", n !== name));
+  ["bottle", "note", "growth", "settings", "cry", "feedman", "sleepman", "diaman"].forEach(n => $("sh-" + n).classList.toggle("hidden", n !== name));
   if (name === "settings") {
     $("remindSel").value = String(settings.remindH || 0);
     $("famInput").value = settings.family || "";
     $("syncStatus").textContent = settings.family ? "Sdílení je zapnuté." : "";
   }
-  if (name === "bottle") $("mlInput").value = "";
-  if (name === "note") $("noteInput").value = "";
-  if (name === "growth") { $("wInput").value = ""; $("lInput").value = ""; }
+  if (name === "bottle") { $("mlInput").value = ""; $("mlTime").value = dtValue(Date.now()); }
+  if (name === "note") { $("noteInput").value = ""; $("noteTime").value = dtValue(Date.now()); }
+  if (name === "growth") { $("wInput").value = ""; $("lInput").value = ""; $("grwTime").value = dtValue(Date.now()); }
+  if (name === "cry") { setCryCause(null); $("cryTime").value = dtValue(Date.now()); }
+  if (name === "feedman") { $("feedTime").value = dtValue(Date.now() - 15 * 60000); $("feedL").value = ""; $("feedP").value = ""; }
+  if (name === "sleepman") { $("slpFrom").value = dtValue(Date.now() - 60 * 60000); $("slpTo").value = dtValue(Date.now()); }
+  if (name === "diaman") { setDiaType("pee"); $("diaTime").value = dtValue(Date.now()); }
   $("overlay").classList.add("open");
 }
 function closeSheet() { $("overlay").classList.remove("open"); }
+
+function setDiaType(t) {
+  diaType = t;
+  document.querySelectorAll("#diaChips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.c === t));
+}
+function setCryCause(c) {
+  cryCause = c;
+  document.querySelectorAll("#cryChips .chip").forEach(ch => ch.classList.toggle("on", ch.dataset.c === c));
+}
 
 function setMl(v) { $("mlInput").value = v; }
 function saveBottle() {
   const ml = parseInt($("mlInput").value, 10);
   if (!ml || ml < 1) { alert("Zadej množství v ml."); return; }
-  bottles.push({ id: uid(), ts: Date.now(), ml: ml });
+  const ts = parseDt("mlTime") || Date.now();
+  bottles.push({ id: uid(), ts: ts, ml: ml });
   save(LS_BOT, bottles);
   queueSync();
   closeSheet();
@@ -849,7 +978,8 @@ function saveBottle() {
 function saveNote() {
   const t = $("noteInput").value.trim();
   if (!t) { alert("Poznámka je prázdná."); return; }
-  notes.push({ id: uid(), ts: Date.now(), text: t.slice(0, 500) });
+  const ts = parseDt("noteTime") || Date.now();
+  notes.push({ id: uid(), ts: ts, text: t.slice(0, 500) });
   save(LS_NOT, notes);
   queueSync();
   closeSheet();
@@ -860,12 +990,56 @@ function saveGrowth() {
   const w = parseFloat(String($("wInput").value).replace(",", "."));
   const l = parseFloat(String($("lInput").value).replace(",", "."));
   if (!w && !l) { alert("Vyplň váhu nebo délku."); return; }
-  growth.push({ id: uid(), ts: Date.now(), weight: w || null, length: l || null });
+  const ts = parseDt("grwTime") || Date.now();
+  growth.push({ id: uid(), ts: ts, weight: w || null, length: l || null });
   save(LS_GRW, growth);
   queueSync();
   closeSheet();
   render();
   flash("Míry uloženy ✓");
+}
+function saveCry() {
+  const ts = parseDt("cryTime") || Date.now();
+  cries.push({ id: uid(), ts: ts, cause: cryCause || "nevime" });
+  save(LS_CRY, cries);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Pláč zaznamenán ✓");
+}
+function saveFeedManual() {
+  const start = parseDt("feedTime");
+  const mL = parseInt($("feedL").value, 10) || 0;
+  const mP = parseInt($("feedP").value, 10) || 0;
+  if (!start) { alert("Zadej začátek kojení."); return; }
+  if (mL + mP < 1) { alert("Zadej počet minut aspoň u jednoho prsa."); return; }
+  const L = mL * 60, P = mP * 60;
+  records.push({ id: uid(), start: start, end: start + (L + P) * 1000, L: L, P: P, lastSide: P > 0 ? "P" : "L" });
+  save(LS_REC, records);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Kojení zapsáno ✓");
+}
+function saveSleepManual() {
+  const from = parseDt("slpFrom"), to = parseDt("slpTo");
+  if (!from || !to) { alert("Zadej oba časy."); return; }
+  if (to <= from) { alert("Konec spánku musí být po začátku."); return; }
+  sleeps.push({ id: uid(), start: from, end: to });
+  save(LS_SLP, sleeps);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Spánek zapsán ✓");
+}
+function saveDiaManual() {
+  const ts = parseDt("diaTime") || Date.now();
+  diapers.push({ id: uid(), ts: ts, pee: diaType !== "poo", poop: diaType !== "pee" });
+  save(LS_DIA, diapers);
+  queueSync();
+  closeSheet();
+  render();
+  flash("Plínka zapsána ✓");
 }
 function saveSettings() {
   settings.remindH = parseFloat($("remindSel").value) || 0;
@@ -901,8 +1075,8 @@ function download(name, content, type) {
 }
 function exportJSON() {
   const data = {
-    app: "tony", version: 3, exported: new Date().toISOString(),
-    records, diapers, sleeps, bottles, notes, growth, settings
+    app: "tony", version: 4, exported: new Date().toISOString(),
+    records, diapers, sleeps, bottles, notes, growth, cries, settings
   };
   const d = new Date();
   download("tony-zaloha-" + dayKey(d.getTime()) + ".json", JSON.stringify(data, null, 1), "application/json");
@@ -930,6 +1104,7 @@ function importJSON(input) {
       mergeArr(bottles, data.bottles, LS_BOT);
       mergeArr(notes, data.notes, LS_NOT);
       mergeArr(growth, data.growth, LS_GRW);
+      mergeArr(cries, data.cries, LS_CRY);
       render();
       queueSync();
       alert("Obnoveno. Přidáno " + added + " záznamů.");
@@ -947,6 +1122,7 @@ function exportCSV() {
     "délka " + Math.round((s.end - s.start) / 60000) + " min"]));
   bottles.forEach(b => rows.push(["lahvička", dayKey(b.ts), fmtTime(b.ts), b.ml + " ml"]));
   notes.forEach(n => rows.push(["poznámka", dayKey(n.ts), fmtTime(n.ts), n.text.replace(/[\r\n;]+/g, " ")]));
+  cries.forEach(c => rows.push(["pláč", dayKey(c.ts), fmtTime(c.ts), "pomohlo: " + (CAUSE_TXT[c.cause] || c.cause)]));
   growth.forEach(g => rows.push(["míry", dayKey(g.ts), fmtTime(g.ts),
     (g.weight ? g.weight + " kg" : "") + (g.weight && g.length ? ", " : "") + (g.length ? g.length + " cm" : "")]));
   rows.sort((a, b) => a === rows[0] ? -1 : (a[1] + a[2]).localeCompare(b[1] + b[2]));
@@ -970,6 +1146,7 @@ function collectRows() {
   bottles.forEach(b => rows.push({ id: b.id, family: fam, kind: "bottle", ts: b.ts, data: b }));
   notes.forEach(n => rows.push({ id: n.id, family: fam, kind: "note", ts: n.ts, data: n }));
   growth.forEach(g => rows.push({ id: g.id, family: fam, kind: "growth", ts: g.ts, data: g }));
+  cries.forEach(c => rows.push({ id: c.id, family: fam, kind: "cry", ts: c.ts, data: c }));
   return rows;
 }
 function applyRemote(remote) {
@@ -981,24 +1158,15 @@ function applyRemote(remote) {
       const k = ids[row.id];
       if (k) {
         const arr = ARR[k]().filter(x => x.id !== row.id);
-        if (k === "feed") records = arr;
-        else if (k === "dia") diapers = arr;
-        else if (k === "sleep") sleeps = arr;
-        else if (k === "bottle") bottles = arr;
-        else if (k === "note") notes = arr;
-        else if (k === "growth") growth = arr;
+        setArr(k, arr);
         save(ARR_KEY[k], arr);
       }
       return;
     }
-    if (ids[row.id] || !row.data || !row.data.id) return;
-    if (row.kind === "feed") { records.push(row.data); save(LS_REC, records); }
-    else if (row.kind === "dia") { diapers.push(row.data); save(LS_DIA, diapers); }
-    else if (row.kind === "sleep") { sleeps.push(row.data); save(LS_SLP, sleeps); }
-    else if (row.kind === "bottle") { bottles.push(row.data); save(LS_BOT, bottles); }
-    else if (row.kind === "note") { notes.push(row.data); save(LS_NOT, notes); }
-    else if (row.kind === "growth") { growth.push(row.data); save(LS_GRW, growth); }
-    else return;
+    if (ids[row.id] || !row.data || !row.data.id || !ARR[row.kind]) return;
+    const arr = ARR[row.kind]();
+    arr.push(row.data);
+    save(ARR_KEY[row.kind], arr);
     ids[row.id] = row.kind;
     added++;
   });
@@ -1016,6 +1184,7 @@ async function syncNow(manual) {
   }
   const st = $("syncStatus");
   if (st) st.textContent = "Synchronizuji…";
+  $("syncBtn").classList.add("spin");
   const H = {
     "apikey": SUPA_KEY,
     "Authorization": "Bearer " + SUPA_KEY,
@@ -1053,11 +1222,14 @@ async function syncNow(manual) {
     renderFooter();
   } catch (e) {
     if (st) st.textContent = "Synchronizace se nepovedla — zkontroluj připojení.";
-    lastSyncText = "sdílení zapnuto · zatím nesynchronizováno";
+    lastSyncText = "sdílení zapnuto · synchronizace se nepovedla";
     renderFooter();
+  } finally {
+    $("syncBtn").classList.remove("spin");
   }
 }
 let lastSyncText = "";
+function manualSync() { syncNow(false); }
 
 /* ============ render ============ */
 function renderLast() {
@@ -1198,6 +1370,16 @@ function renderDay() {
   $("slpMax").textContent = slpSecs.length ? fmtDur(Math.max.apply(null, slpSecs)) : "—";
   const botSum = bottles.filter(b => dayKey(b.ts) === today).reduce((s, b) => s + b.ml, 0);
   $("botTotal").textContent = botSum ? botSum + " ml" : "—";
+  const todayCry = cries.filter(c => dayKey(c.ts) === today);
+  $("cryCount").textContent = todayCry.length;
+  if (todayCry.length) {
+    const counts = {};
+    todayCry.forEach(c => { counts[c.cause] = (counts[c.cause] || 0) + 1; });
+    const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+    $("cryTop").textContent = CAUSE_TXT[top] || top;
+  } else {
+    $("cryTop").textContent = "—";
+  }
 }
 
 /* ============ grafy ============ */
@@ -1278,6 +1460,7 @@ function renderHistory() {
     .concat(bottles.map(b => ({ kind: "bottle", ts: b.ts, o: b })))
     .concat(notes.map(n => ({ kind: "note", ts: n.ts, o: n })))
     .concat(growth.map(g => ({ kind: "growth", ts: g.ts, o: g })))
+    .concat(cries.map(c => ({ kind: "cry", ts: c.ts, o: c })))
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 100);
   if (!events.length) {
@@ -1317,6 +1500,9 @@ function renderHistory() {
       if (o.length) parts.push(String(o.length).replace(".", ",") + " cm");
       dots = '<span class="hist-dot d-grw"></span><span class="hist-dot"></span>';
       info = '<span class="hist-total">Míry</span> · ' + esc(parts.join(" · "));
+    } else if (ev.kind === "cry") {
+      dots = '<span class="hist-dot d-cry"></span><span class="hist-dot"></span>';
+      info = '<span class="hist-total">Pláč</span> · pomohlo: ' + esc(CAUSE_TXT[o.cause] || o.cause);
     }
     html +=
       '<div class="hist-item">' +
@@ -1331,6 +1517,7 @@ function renderHistory() {
 
 function renderFooter() {
   $("footerInfo").textContent = "Tony · " + (settings.family ? lastSyncText || "sdílení zapnuto" : "data zůstávají jen v tomto telefonu");
+  $("syncBtn").classList.toggle("hidden", !settings.family);
 }
 
 function render() {
@@ -1356,13 +1543,14 @@ setInterval(() => {
   renderSleep();
   renderDay();
 }, 30000);
-setInterval(() => { if (settings.family) syncNow(false); }, 180000);
+setInterval(() => { if (settings.family) syncNow(false); }, 60000);
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
     render();
     if (settings.family) syncNow(false);
   }
 });
+window.addEventListener("online", () => { if (settings.family) syncNow(false); });
 if (settings.family) syncNow(false);
 
 if ("serviceWorker" in navigator) {

@@ -1,4 +1,4 @@
-const CACHE = "tony-v3";
+const CACHE = "tony-v4";
 const ASSETS = ["./", "index.html", "manifest.json", "icon-192.png", "icon.svg"];
 
 self.addEventListener("install", e => {
