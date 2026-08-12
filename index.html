@@ -148,6 +148,34 @@
     letter-spacing: .1em;
     color: var(--muted);
   }
+  /* ---- Věk a tip dne ---- */
+  #ageCard { position: relative; overflow: hidden; }
+  #ageCard::before {
+    content: "";
+    position: absolute;
+    top: -70px; left: -70px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--bg-glow-2), transparent 70%);
+    pointer-events: none;
+  }
+  .age-main { font-size: 1.55rem; font-weight: 800; letter-spacing: -.02em; margin-top: 6px; line-height: 1.2; }
+  .age-sub { font-size: .84rem; color: var(--muted); margin-top: 4px; }
+  .tip-box {
+    margin-top: 13px;
+    background: var(--blue-soft);
+    border-radius: 16px;
+    padding: 13px 15px;
+  }
+  .tip-label {
+    font-size: .7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .09em;
+    color: var(--blue-text); margin-bottom: 5px;
+  }
+  .tip-text { font-size: .92rem; line-height: 1.55; color: var(--text); }
+  .tip-note { font-size: .74rem; color: var(--muted); margin-top: 8px; font-style: italic; }
+  .age-setup { margin-top: 10px; }
+
   /* ---- Poslední kojení ---- */
   #lastCard { position: relative; overflow: hidden; }
   #lastCard::before {
@@ -423,6 +451,24 @@
     <button class="gear" onclick="openSheet('settings')" aria-label="Nastavení">⚙</button>
   </header>
 
+  <!-- Věk miminka a tip dne -->
+  <div class="card" id="ageCard">
+    <div class="label" id="ageLabel">Miminko</div>
+    <div id="ageContent" class="hidden">
+      <div class="age-main" id="ageMain"></div>
+      <div class="age-sub" id="ageSub"></div>
+      <div class="tip-box">
+        <div class="tip-label">Tip na dnešek</div>
+        <div class="tip-text" id="tipText"></div>
+        <div class="tip-note">Každé miminko se vyvíjí svým tempem — rozmezí jsou orientační.</div>
+      </div>
+    </div>
+    <div id="ageSetup" class="age-setup hidden">
+      <div class="dia-last">Nastavte datum narození a Tony bude počítat věk miminka a každý den ukáže nový tip o jeho vývoji.</div>
+      <button class="btn btn-switch age-setup" style="width:100%" onclick="openSheet('settings')">Nastavit datum narození</button>
+    </div>
+  </div>
+
   <!-- Poslední kojení -->
   <div class="card" id="lastCard">
     <div class="label">Naposledy kojení</div>
@@ -667,6 +713,11 @@
       <div id="sh-settings" class="hidden">
         <h2>Nastavení</h2>
         <div class="set-block" style="border-top:none;padding-top:0;margin-top:6px">
+          <h3>Miminko</h3>
+          <div class="fld"><label>Jméno (nepovinné)</label><input type="text" id="nameInput" placeholder="např. Tonda" maxlength="30"></div>
+          <div class="fld"><label>Datum narození</label><input type="date" id="birthInput"></div>
+        </div>
+        <div class="set-block">
           <h3>Připomínka kojení</h3>
           <div class="sub" style="margin-bottom:8px">Zvýrazní upozornění, když od posledního kojení uběhne víc než zvolený čas.</div>
           <div class="fld"><select id="remindSel">
@@ -746,8 +797,64 @@ let bottles = load(LS_BOT, []);
 let notes = load(LS_NOT, []);
 let growth = load(LS_GRW, []);
 let cries = load(LS_CRY, []);
-let settings = Object.assign({ remindH: 0, family: "" }, load(LS_SET, {}));
+let settings = Object.assign({ remindH: 0, family: "", birth: "", babyName: "" }, load(LS_SET, {}));
 const CAUSE_TXT = { hlad: "hlad", nadymani: "nadýmání", plinka: "přebalení", styskani: "stýskání", nevime: "nevíme" };
+
+/* Vývojové tipy podle věku (ve dnech). Vychází ze standardních vývojových
+   milníků (WHO / americká pediatrická doporučení). Rozmezí jsou orientační. */
+const TIPS = [
+  { a: 0, b: 1, t: "Novorozenec zaostří nejlépe na 20–30 cm — přesně na vzdálenost obličeje při kojení. Maminčin hlas bezpečně pozná už z bříška." },
+  { a: 2, b: 2, t: "Miminko už pár dní po narození pozná maminku po čichu — vůně jejího mléka ho dokáže zklidnit." },
+  { a: 3, b: 3, t: "Úchopový reflex: když miminku vložíte prst do dlaně, pevně ho sevře. Tenhle vrozený reflex vydrží zhruba do 3–4 měsíců." },
+  { a: 4, b: 4, t: "Novorozenci nejlépe vnímají vyšší tóny — proto na miminka přirozeně mluvíme vyšším, zpěvavým hlasem. Právě takový projev jim pomáhá s vývojem řeči." },
+  { a: 5, b: 5, t: "Kontakt kůže na kůži zklidňuje miminku dech i srdíčko a podporuje kojení. Dopřávejte si ho, kolik jen chcete — platí to i pro tatínky." },
+  { a: 6, b: 6, t: "Miminko zatím nejlépe vidí výrazné kontrasty — černobílé vzory ho zaujmou víc než jemné pastelové barvy." },
+  { a: 7, b: 7, t: "Týden na světě! Novorozenci po porodu běžně zhubnou až 10 % váhy a zhruba do dvou týdnů ji zase doženou." },
+  { a: 8, b: 8, t: "Novorozenec prospí 14–17 hodin denně, ale v krátkých úsecích — jeho spánkový cyklus trvá jen kolem 50 minut." },
+  { a: 9, b: 9, t: "Pláč je zatím jediný způsob komunikace. Rychlou reakcí miminko nerozmazlujete — budujete jeho pocit bezpečí." },
+  { a: 10, b: 10, t: "V tomto věku miminko vidí ostře zhruba na 30 cm a nejvíc ho zajímají obličeje — hlavně ty vaše." },
+  { a: 11, b: 11, t: "Krátké chvilky na bříšku, když je miminko vzhůru a pod dohledem, posilují krční svaly. Stačí párkrát denně pár minut." },
+  { a: 12, b: 12, t: "Miminko rozliší hlas maminky od cizích a zklidní se při něm. Mluvte na něj při všem, co spolu děláte." },
+  { a: 13, b: 13, t: "Zkuste na miminko pomalu vypláznout jazyk — novorozenci umí jednoduchou mimiku napodobit už pár dní po narození." },
+  { a: 14, b: 14, t: "Dva týdny! Kolem tohoto věku přichází první růstový spurt — miminko chce jíst častěji. Je to normální a za pár dní se to srovná." },
+  { a: 15, b: 20, t: "Častější kojení v některých dnech (tzv. cluster feeding) je běžné — miminko si tak samo „objednává“ víc mléka na další růst." },
+  { a: 15, b: 20, t: "Miminko už krátce sleduje pohybující se obličej nebo hračku. Pohybujte s ní pomalu ze strany na stranu asi 25 cm od očí." },
+  { a: 21, b: 27, t: "Tiché „ššš“ nebo bílý šum připomíná miminku zvuky z bříška a pomáhá mu zklidnit se." },
+  { a: 21, b: 27, t: "Miminko začíná déle udržet oční kontakt. Chvilky, kdy si hledíte do očí, jsou pro jeho mozek velká událost." },
+  { a: 28, b: 41, t: "Blíží se první opravdový úsměv! Sociální úsměv se objevuje většinou mezi 4. a 8. týdnem." },
+  { a: 28, b: 41, t: "Pláč obvykle vrcholí kolem 6. týdne a pak postupně ubývá. Když je toho moc, je v pořádku miminko bezpečně položit a na chvíli si vydechnout." },
+  { a: 42, b: 55, t: "Miminko začíná broukat — samohlásky jako „ááá“ a „ééé“. Odpovídejte mu; vedete spolu úplně první rozhovory." },
+  { a: 42, b: 55, t: "Úsměv už je nejspíš na světě! Miminko se usmívá cíleně na lidi — a váš úsměv v odpovědi mu dělá radost i posiluje pouto." },
+  { a: 56, b: 69, t: "V leže na bříšku už miminko zvedá hlavičku do úhlu 45°. Krční svaly sílí každým dnem." },
+  { a: 56, b: 69, t: "Miminko objevuje vlastní ručičky — vydrží si je prohlížet dlouhé minuty. Je to důležitý krok k cílenému uchopování." },
+  { a: 70, b: 89, t: "Miminko sleduje předmět očima v celém oblouku a otáčí hlavičku za zvukem." },
+  { a: 70, b: 89, t: "Objevuje se první smích nahlas — legrační obličeje a jemné lechtání ho spolehlivě rozveselí." },
+  { a: 90, b: 119, t: "Hlavičku už většina miminek udrží zpříma. Vidí dál než dřív a barvy začíná rozlišovat podobně jako dospělí." },
+  { a: 90, b: 119, t: "Miminko spojuje ručičky před tělem a natahuje se po hračkách. Hrazdička se zavěšenými hračkami je teď ideální parťák." },
+  { a: 120, b: 149, t: "Mnoho miminek se v tomhle období poprvé přetočí — od teď už nikdy nenechávejte miminko bez dozoru na přebalovacím pultu." },
+  { a: 120, b: 149, t: "Miminko se hlasitě směje a piští radostí. Známé hlasy bezpečně rozlišuje a na řeč reaguje celým tělem." },
+  { a: 150, b: 179, t: "Miminko přendává hračku z ruky do ruky a všechno zkoumá pusou — tak poznává svět. Hlídejte jen drobné předměty." },
+  { a: 150, b: 179, t: "Kolem půl roku bývá čas na první příkrmy — miminko sedí s oporou, zajímá se o jídlo u stolu a umí ho polknout ze lžičky." },
+  { a: 180, b: 209, t: "Začíná žvatlání se slabikami: ba-ba, ma-ma, da-da. Zatím bez významu, ale je to velký krok k řeči." },
+  { a: 180, b: 209, t: "Miminko začíná chápat, že věci nemizí — když schováte hračku pod plenku, hledá ji. Skvělý věk na hru „kuk!“" },
+  { a: 210, b: 239, t: "Mnoho dětí začíná lézt nebo se plazit. A některé lezení úplně přeskočí — i to je v pořádku." },
+  { a: 210, b: 239, t: "Objevuje se ostych z cizích lidí a úzkost z odloučení. Je to známka zdravého pouta, ne rozmazlenosti." },
+  { a: 240, b: 269, t: "Dítě se přitahuje do stoje u nábytku. Dobrý čas zajistit ostré rohy a nestabilní kusy nábytku." },
+  { a: 240, b: 269, t: "Rozvíjí se špetkový úchop — drobek mezi palcem a ukazováčkem. Skvělý trénink jemné motoriky (a úklidu podlahy)." },
+  { a: 270, b: 299, t: "Dítě rozumí jednoduchým pokynům a slovu „ne“ — i když ho zatím ne vždy poslechne." },
+  { a: 270, b: 299, t: "Mávání „pá pá“ a ukazování prstíkem — dítě komunikuje gesty. Odpovídejte na ně, je to předstupeň řeči." },
+  { a: 300, b: 364, t: "Dítě obchází nábytek a možná chvilku stojí samo. První samostatné kroky přicházejí kdykoli mezi 9. a 18. měsícem." },
+  { a: 300, b: 364, t: "První slova s významem — nejčastěji „mama“ a „tata“ — se objevují kolem prvních narozenin." },
+  { a: 365, b: 449, t: "Rok! Většina dětí kolem roku zhruba ztrojnásobí porodní váhu. Nejistá chůze o široké základně je teď úplně normální." },
+  { a: 365, b: 449, t: "Dítě rozumí mnohem víc, než samo řekne. Komentujte nahlas, co spolu děláte — slovní zásoba roste posloucháním." },
+  { a: 450, b: 539, t: "Dítě staví věž ze dvou kostek, čmárá pastelkou a zkouší jíst lžičkou — nepořádek k učení patří." },
+  { a: 450, b: 539, t: "Slovní zásoba se rozjíždí: kolem 18 měsíců říká většina dětí 10–20 slov a rozumí mnoha dalším." },
+  { a: 540, b: 629, t: "Začíná období vzdoru — dítě objevuje vlastní vůli. Není to schválnost; mozek se učí samostatnosti." },
+  { a: 540, b: 629, t: "Dítě běhá, po schodech leze s oporou a miluje napodobování domácích prací. Zapojte ho — je to ta nejlepší hra." },
+  { a: 630, b: 729, t: "Přicházejí první dvouslovné věty: „ještě mlíko“, „táta pryč“. Řeč teď poroste raketovým tempem." },
+  { a: 630, b: 729, t: "Dítě si hraje „jakoby“ — krmí medvídka, telefonuje. Symbolická hra je velký milník myšlení." },
+  { a: 730, b: 100000, t: "Dva roky a víc! Dítě mluví v krátkých větách, skáče snožmo a rádo si hraje vedle ostatních dětí. Užívejte si každý den." }
+];
 let pendingDel = load(LS_DEL, []);
 
 function uid() { return Date.now() + "" + Math.floor(Math.random() * 100000); }
@@ -946,6 +1053,8 @@ function openSheet(name) {
   if (name === "settings") {
     $("remindSel").value = String(settings.remindH || 0);
     $("famInput").value = settings.family || "";
+    $("nameInput").value = settings.babyName || "";
+    $("birthInput").value = settings.birth || "";
     $("syncStatus").textContent = settings.family ? "Sdílení je zapnuté." : "";
   }
   if (name === "bottle") { $("mlInput").value = ""; $("mlTime").value = dtValue(Date.now()); }
@@ -1101,6 +1210,8 @@ function saveDiaManual() {
 }
 function saveSettings() {
   settings.remindH = parseFloat($("remindSel").value) || 0;
+  settings.babyName = $("nameInput").value.trim().slice(0, 30);
+  settings.birth = $("birthInput").value || "";
   const fam = $("famInput").value.trim().toUpperCase();
   const famChanged = fam !== settings.family;
   settings.family = fam;
@@ -1205,6 +1316,9 @@ function collectRows() {
   notes.forEach(n => rows.push({ id: n.id, family: fam, kind: "note", ts: n.ts, data: n }));
   growth.forEach(g => rows.push({ id: g.id, family: fam, kind: "growth", ts: g.ts, data: g }));
   cries.forEach(c => rows.push({ id: c.id, family: fam, kind: "cry", ts: c.ts, data: c }));
+  if (settings.birth || settings.babyName) {
+    rows.push({ id: "meta-" + fam, family: fam, kind: "meta", ts: 0, data: { birth: settings.birth, babyName: settings.babyName } });
+  }
   return rows;
 }
 function applyRemote(remote) {
@@ -1219,6 +1333,13 @@ function applyRemote(remote) {
         setArr(k, arr);
         save(ARR_KEY[k], arr);
       }
+      return;
+    }
+    if (row.kind === "meta" && row.data) {
+      let changed = false;
+      if (row.data.birth && !settings.birth) { settings.birth = row.data.birth; changed = true; }
+      if (row.data.babyName && !settings.babyName) { settings.babyName = row.data.babyName; changed = true; }
+      if (changed) save(LS_SET, settings);
       return;
     }
     if (ids[row.id] || !row.data || !row.data.id || !ARR[row.kind]) return;
@@ -1290,6 +1411,58 @@ let lastSyncText = "";
 function manualSync() { syncNow(false); }
 
 /* ============ render ============ */
+function plur(n, one, few, many) { return n === 1 ? one : (n >= 2 && n <= 4 ? few : many); }
+function ageParts(birthStr) {
+  const bd = new Date(birthStr + "T00:00:00");
+  if (isNaN(bd.getTime())) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((today - bd) / 864e5);
+  if (days < 0) return null;
+  let months = (today.getFullYear() - bd.getFullYear()) * 12 + (today.getMonth() - bd.getMonth());
+  if (today.getDate() < bd.getDate()) months--;
+  const anchor = new Date(bd.getFullYear(), bd.getMonth() + months, Math.min(bd.getDate(), 28));
+  const remDays = Math.max(0, Math.round((today - anchor) / 864e5));
+  return { days: days, months: months, remDays: remDays };
+}
+function ageText(p) {
+  if (p.days < 31) return p.days + " " + plur(p.days, "den", "dny", "dní");
+  if (p.months < 24) {
+    let s = p.months + " " + plur(p.months, "měsíc", "měsíce", "měsíců");
+    if (p.remDays > 0) s += " a " + p.remDays + " " + plur(p.remDays, "den", "dny", "dní");
+    return s;
+  }
+  const y = Math.floor(p.months / 12), m = p.months % 12;
+  let s = y + " " + plur(y, "rok", "roky", "let");
+  if (m > 0) s += " a " + m + " " + plur(m, "měsíc", "měsíce", "měsíců");
+  return s;
+}
+function renderAge() {
+  const has = !!settings.birth;
+  $("ageContent").classList.toggle("hidden", !has);
+  $("ageSetup").classList.toggle("hidden", has);
+  $("ageLabel").textContent = settings.babyName || "Miminko";
+  if (!has) return;
+  const p = ageParts(settings.birth);
+  if (!p) {
+    $("ageContent").classList.add("hidden");
+    $("ageSetup").classList.remove("hidden");
+    return;
+  }
+  const name = settings.babyName || "Miminko";
+  $("ageMain").textContent = name + " má dnes " + ageText(p);
+  const bd = new Date(settings.birth + "T00:00:00");
+  const weeks = Math.floor(p.days / 7);
+  $("ageSub").textContent = "narození " + bd.getDate() + ". " + (bd.getMonth() + 1) + ". " + bd.getFullYear() +
+    " · celkem " + p.days + " " + plur(p.days, "den", "dny", "dní") +
+    (p.days >= 14 && p.days < 120 ? " (" + weeks + " " + plur(weeks, "týden", "týdny", "týdnů") + ")" : "");
+  const matches = TIPS.filter(t => p.days >= t.a && p.days <= t.b);
+  if (matches.length) {
+    $("tipText").textContent = matches[p.days % matches.length].t;
+  } else {
+    $("tipText").textContent = "Užívejte si spolu každý den — pravidelný rytmus, mluvení a mazlení jsou to nejlepší, co pro vývoj miminka můžete udělat.";
+  }
+}
 function renderLast() {
   const sorted = records.slice().sort((a, b) => b.start - a.start);
   const last = sorted[0];
@@ -1580,6 +1753,7 @@ function renderFooter() {
 }
 
 function render() {
+  renderAge();
   renderLast();
   renderActive();
   renderSleep();
@@ -1597,6 +1771,7 @@ setInterval(() => {
   if (activeSleep) renderSleep();
 }, 1000);
 setInterval(() => {
+  renderAge();
   renderLast();
   renderDiaper();
   renderSleep();
