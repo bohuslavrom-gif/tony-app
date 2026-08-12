@@ -367,6 +367,7 @@
   .hist-info { flex: 1; font-size: .87rem; color: var(--muted); line-height: 1.45; overflow-wrap: anywhere; }
   .hist-total { font-weight: 650; color: var(--text); }
   .hist-del { border: none; background: none; color: var(--faint); font-size: 1rem; cursor: pointer; padding: 8px; line-height: 1; }
+  .hist-edit { border: none; background: none; color: var(--faint); font-size: .95rem; cursor: pointer; padding: 8px 4px; line-height: 1; }
   .empty { text-align: center; color: var(--muted); font-size: .9rem; padding: 30px 10px; line-height: 1.5; }
   .hidden { display: none !important; }
   footer { text-align: center; font-size: .74rem; color: var(--faint); margin-top: 26px; line-height: 1.6; }
@@ -568,7 +569,7 @@
     <div class="sheet">
       <!-- Lahvička -->
       <div id="sh-bottle" class="hidden">
-        <h2>Lahvička</h2>
+        <h2 id="t-bottle">Lahvička</h2>
         <div class="sub">Kolik toho vypil? Klepni na množství, nebo zadej vlastní.</div>
         <div class="ml-row">
           <button class="ml-chip" onclick="setMl(30)">30 ml</button>
@@ -586,7 +587,7 @@
       </div>
       <!-- Pláč -->
       <div id="sh-cry" class="hidden">
-        <h2>Pláč</h2>
+        <h2 id="t-cry">Pláč</h2>
         <div class="sub">Co nakonec pomohlo?</div>
         <div class="chip-row" id="cryChips">
           <button class="chip" data-c="hlad" onclick="setCryCause('hlad')">Hlad</button>
@@ -603,7 +604,7 @@
       </div>
       <!-- Kojení zpětně -->
       <div id="sh-feedman" class="hidden">
-        <h2>Kojení zpětně</h2>
+        <h2 id="t-feedman">Kojení zpětně</h2>
         <div class="sub">Zapiš kojení, které proběhlo bez stopek.</div>
         <div class="fld"><label>Začátek</label><input type="datetime-local" id="feedTime"></div>
         <div class="fld"><label>Levé prso (minut)</label><input type="number" id="feedL" min="0" max="120" inputmode="numeric" placeholder="0"></div>
@@ -615,7 +616,7 @@
       </div>
       <!-- Spánek zpětně -->
       <div id="sh-sleepman" class="hidden">
-        <h2>Spánek zpětně</h2>
+        <h2 id="t-sleepman">Spánek zpětně</h2>
         <div class="sub">Zapiš spánek, který proběhl bez stopek.</div>
         <div class="fld"><label>Usnul</label><input type="datetime-local" id="slpFrom"></div>
         <div class="fld"><label>Vzbudil se</label><input type="datetime-local" id="slpTo"></div>
@@ -626,7 +627,7 @@
       </div>
       <!-- Plínka zpětně -->
       <div id="sh-diaman" class="hidden">
-        <h2>Plínka zpětně</h2>
+        <h2 id="t-diaman">Plínka zpětně</h2>
         <div class="sub">Co bylo v plínce?</div>
         <div class="chip-row" id="diaChips">
           <button class="chip" data-c="pee" onclick="setDiaType('pee')">Čůral</button>
@@ -641,7 +642,7 @@
       </div>
       <!-- Poznámka -->
       <div id="sh-note" class="hidden">
-        <h2>Poznámka</h2>
+        <h2 id="t-note">Poznámka</h2>
         <div class="sub">Cokoli si chceš zapamatovat — teplota, nálada, první úsměv…</div>
         <div class="fld"><textarea id="noteInput" placeholder="Napiš poznámku…"></textarea></div>
         <div class="fld"><label>Kdy</label><input type="datetime-local" id="noteTime"></div>
@@ -652,7 +653,7 @@
       </div>
       <!-- Míry -->
       <div id="sh-growth" class="hidden">
-        <h2>Váha a délka</h2>
+        <h2 id="t-growth">Váha a délka</h2>
         <div class="sub">Stačí vyplnit jedno z polí — třeba po vážení u doktora.</div>
         <div class="fld"><label>Váha (kg)</label><input type="number" id="wInput" step="0.01" min="0" max="30" inputmode="decimal" placeholder="např. 4,25"></div>
         <div class="fld"><label>Délka (cm)</label><input type="number" id="lInput" step="0.5" min="0" max="120" inputmode="decimal" placeholder="např. 56"></div>
@@ -936,7 +937,11 @@ function delEvent(kind, id) {
 
 /* ============ modaly ============ */
 let diaType = "pee", cryCause = null;
+let editKind = null, editId = null;
+const SHEET_TITLES = { bottle: "Lahvička", note: "Poznámka", growth: "Váha a délka", cry: "Pláč", feedman: "Kojení zpětně", sleepman: "Spánek zpětně", diaman: "Plínka zpětně" };
 function openSheet(name) {
+  editKind = null; editId = null;
+  Object.keys(SHEET_TITLES).forEach(n => { const t = $("t-" + n); if (t) t.textContent = SHEET_TITLES[n]; });
   ["bottle", "note", "growth", "settings", "cry", "feedman", "sleepman", "diaman"].forEach(n => $("sh-" + n).classList.toggle("hidden", n !== name));
   if (name === "settings") {
     $("remindSel").value = String(settings.remindH || 0);
@@ -952,7 +957,53 @@ function openSheet(name) {
   if (name === "diaman") { setDiaType("pee"); $("diaTime").value = dtValue(Date.now()); }
   $("overlay").classList.add("open");
 }
-function closeSheet() { $("overlay").classList.remove("open"); }
+function closeSheet() { $("overlay").classList.remove("open"); editKind = null; editId = null; }
+
+const KIND_SHEET = { feed: "feedman", sleep: "sleepman", dia: "diaman", bottle: "bottle", note: "note", growth: "growth", cry: "cry" };
+function openEditor(kind, id) {
+  const o = ARR[kind]().find(x => x.id === id);
+  if (!o) return;
+  openSheet(KIND_SHEET[kind]);
+  editKind = kind; editId = id;
+  const t = $("t-" + KIND_SHEET[kind]);
+  if (t) t.textContent = "Upravit: " + SHEET_TITLES[KIND_SHEET[kind]].toLowerCase().replace(" zpětně", "");
+  if (kind === "feed") {
+    $("feedTime").value = dtValue(o.start);
+    $("feedL").value = Math.round(o.L / 60);
+    $("feedP").value = Math.round(o.P / 60);
+  } else if (kind === "sleep") {
+    $("slpFrom").value = dtValue(o.start);
+    $("slpTo").value = dtValue(o.end);
+  } else if (kind === "dia") {
+    setDiaType(o.pee && o.poop ? "both" : (o.poop ? "poo" : "pee"));
+    $("diaTime").value = dtValue(o.ts);
+  } else if (kind === "bottle") {
+    $("mlInput").value = o.ml;
+    $("mlTime").value = dtValue(o.ts);
+  } else if (kind === "note") {
+    $("noteInput").value = o.text;
+    $("noteTime").value = dtValue(o.ts);
+  } else if (kind === "growth") {
+    $("wInput").value = o.weight || "";
+    $("lInput").value = o.length || "";
+    $("grwTime").value = dtValue(o.ts);
+  } else if (kind === "cry") {
+    setCryCause(o.cause);
+    $("cryTime").value = dtValue(o.ts);
+  }
+}
+function finishEdit(kind) {
+  if (editKind !== kind || !editId) return false;
+  const arr = ARR[kind]().filter(x => x.id !== editId);
+  setArr(kind, arr);
+  save(ARR_KEY[kind], arr);
+  if (settings.family) {
+    pendingDel.push(editId);
+    save(LS_DEL, pendingDel);
+  }
+  editKind = null; editId = null;
+  return true;
+}
 
 function setDiaType(t) {
   diaType = t;
@@ -968,44 +1019,48 @@ function saveBottle() {
   const ml = parseInt($("mlInput").value, 10);
   if (!ml || ml < 1) { alert("Zadej množství v ml."); return; }
   const ts = parseDt("mlTime") || Date.now();
+  const edited = finishEdit("bottle");
   bottles.push({ id: uid(), ts: ts, ml: ml });
   save(LS_BOT, bottles);
   queueSync();
   closeSheet();
   render();
-  flash("Lahvička " + ml + " ml uložena ✓");
+  flash(edited ? "Záznam upraven ✓" : "Lahvička " + ml + " ml uložena ✓");
 }
 function saveNote() {
   const t = $("noteInput").value.trim();
   if (!t) { alert("Poznámka je prázdná."); return; }
   const ts = parseDt("noteTime") || Date.now();
+  const edited = finishEdit("note");
   notes.push({ id: uid(), ts: ts, text: t.slice(0, 500) });
   save(LS_NOT, notes);
   queueSync();
   closeSheet();
   render();
-  flash("Poznámka uložena ✓");
+  flash(edited ? "Záznam upraven ✓" : "Poznámka uložena ✓");
 }
 function saveGrowth() {
   const w = parseFloat(String($("wInput").value).replace(",", "."));
   const l = parseFloat(String($("lInput").value).replace(",", "."));
   if (!w && !l) { alert("Vyplň váhu nebo délku."); return; }
   const ts = parseDt("grwTime") || Date.now();
+  const edited = finishEdit("growth");
   growth.push({ id: uid(), ts: ts, weight: w || null, length: l || null });
   save(LS_GRW, growth);
   queueSync();
   closeSheet();
   render();
-  flash("Míry uloženy ✓");
+  flash(edited ? "Záznam upraven ✓" : "Míry uloženy ✓");
 }
 function saveCry() {
   const ts = parseDt("cryTime") || Date.now();
+  const edited = finishEdit("cry");
   cries.push({ id: uid(), ts: ts, cause: cryCause || "nevime" });
   save(LS_CRY, cries);
   queueSync();
   closeSheet();
   render();
-  flash("Pláč zaznamenán ✓");
+  flash(edited ? "Záznam upraven ✓" : "Pláč zaznamenán ✓");
 }
 function saveFeedManual() {
   const start = parseDt("feedTime");
@@ -1014,32 +1069,35 @@ function saveFeedManual() {
   if (!start) { alert("Zadej začátek kojení."); return; }
   if (mL + mP < 1) { alert("Zadej počet minut aspoň u jednoho prsa."); return; }
   const L = mL * 60, P = mP * 60;
+  const edited = finishEdit("feed");
   records.push({ id: uid(), start: start, end: start + (L + P) * 1000, L: L, P: P, lastSide: P > 0 ? "P" : "L" });
   save(LS_REC, records);
   queueSync();
   closeSheet();
   render();
-  flash("Kojení zapsáno ✓");
+  flash(edited ? "Záznam upraven ✓" : "Kojení zapsáno ✓");
 }
 function saveSleepManual() {
   const from = parseDt("slpFrom"), to = parseDt("slpTo");
   if (!from || !to) { alert("Zadej oba časy."); return; }
   if (to <= from) { alert("Konec spánku musí být po začátku."); return; }
+  const edited = finishEdit("sleep");
   sleeps.push({ id: uid(), start: from, end: to });
   save(LS_SLP, sleeps);
   queueSync();
   closeSheet();
   render();
-  flash("Spánek zapsán ✓");
+  flash(edited ? "Záznam upraven ✓" : "Spánek zapsán ✓");
 }
 function saveDiaManual() {
   const ts = parseDt("diaTime") || Date.now();
+  const edited = finishEdit("dia");
   diapers.push({ id: uid(), ts: ts, pee: diaType !== "poo", poop: diaType !== "pee" });
   save(LS_DIA, diapers);
   queueSync();
   closeSheet();
   render();
-  flash("Plínka zapsána ✓");
+  flash(edited ? "Záznam upraven ✓" : "Plínka zapsána ✓");
 }
 function saveSettings() {
   settings.remindH = parseFloat($("remindSel").value) || 0;
@@ -1509,6 +1567,7 @@ function renderHistory() {
         '<div class="hist-dots">' + dots + "</div>" +
         '<div class="hist-time">' + fmtTime(ev.ts) + "</div>" +
         '<div class="hist-info">' + info + "</div>" +
+        '<button class="hist-edit" onclick="openEditor(\'' + ev.kind + '\',\'' + esc(o.id) + '\')" aria-label="Upravit">✎</button>' +
         '<button class="hist-del" onclick="delEvent(\'' + ev.kind + '\',\'' + esc(o.id) + '\')" aria-label="Smazat">✕</button>' +
       "</div>";
   }
