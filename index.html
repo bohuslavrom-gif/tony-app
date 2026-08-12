@@ -950,7 +950,7 @@ function exportCSV() {
   growth.forEach(g => rows.push(["míry", dayKey(g.ts), fmtTime(g.ts),
     (g.weight ? g.weight + " kg" : "") + (g.weight && g.length ? ", " : "") + (g.length ? g.length + " cm" : "")]));
   rows.sort((a, b) => a === rows[0] ? -1 : (a[1] + a[2]).localeCompare(b[1] + b[2]));
-  const csv = "﻿" + rows.map(r => r.join(";")).join("\r\n");
+  const csv = "\uFEFF" + rows.map(r => r.join(";")).join("\r\n");
   download("tony-export-" + dayKey(Date.now()) + ".csv", csv, "text/csv;charset=utf-8");
 }
 
