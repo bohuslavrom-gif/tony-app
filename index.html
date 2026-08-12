@@ -31,6 +31,12 @@
     --blue-deep: #6478b8;
     --blue-soft: #edf0fa;
     --blue-text: #5568a5;
+    --pee: #dfa63d;
+    --pee-soft: #fbf1dd;
+    --pee-text: #a1761f;
+    --poo: #b08157;
+    --poo-soft: #f4ebe2;
+    --poo-text: #86603f;
     --border: #f1e8e1;
     --shadow-sm: 0 1px 3px rgba(95, 70, 60, .05), 0 4px 14px rgba(95, 70, 60, .06);
     --shadow-lg: 0 4px 10px rgba(95, 70, 60, .07), 0 12px 32px rgba(95, 70, 60, .10);
@@ -54,6 +60,12 @@
       --blue-deep: #6478b8;
       --blue-soft: #252b40;
       --blue-text: #aab8e6;
+      --pee: #dfa63d;
+      --pee-soft: #383021;
+      --pee-text: #e9c37c;
+      --poo: #b08157;
+      --poo-soft: #342b23;
+      --poo-text: #d3ab80;
       --border: #322d40;
       --shadow-sm: 0 1px 3px rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.22);
       --shadow-lg: 0 4px 10px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.35);
@@ -296,6 +308,36 @@
   }
   .btn-cancel { background: none; color: var(--muted); font-weight: 550; padding: 8px; font-size: .86rem; }
 
+  /* ---- Plínka ---- */
+  .dia-last { margin-top: 8px; font-size: .92rem; color: var(--muted); line-height: 1.45; }
+  .dia-last b { color: var(--text); font-weight: 650; }
+  .dia-row { display: flex; gap: 10px; margin-top: 13px; }
+  .btn-dia {
+    flex: 1;
+    border: none;
+    border-radius: 16px;
+    padding: 14px 6px;
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .1s ease;
+  }
+  .btn-dia:active { transform: scale(.95); }
+  .btn-dia small { display: block; font-size: .7rem; font-weight: 550; opacity: .8; margin-top: 3px; }
+  .dia-pee { background: var(--pee-soft); color: var(--pee-text); }
+  .dia-poo { background: var(--poo-soft); color: var(--poo-text); }
+  .dia-both { background: linear-gradient(115deg, var(--pee-soft) 48%, var(--poo-soft) 52%); color: var(--poo-text); }
+  .dia-flash {
+    text-align: center;
+    font-size: .84rem;
+    font-weight: 650;
+    color: var(--rose-text);
+    margin-top: 10px;
+    min-height: 1.1em;
+    transition: opacity .4s;
+  }
+
   /* ---- Denní přehled ---- */
   .day-stats { display: flex; text-align: center; margin: 14px 0 16px; }
   .day-stat { flex: 1; position: relative; }
@@ -352,6 +394,25 @@
   .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ring-track); }
   .hist-dot.d-L { background: var(--rose); }
   .hist-dot.d-P { background: var(--blue); }
+  .hist-dot.d-pee { background: var(--pee); }
+  .hist-dot.d-poo { background: var(--poo); }
+  .dia-day {
+    display: flex;
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .dia-day .day-stat .v { font-size: 1.25rem; }
+  .dot-lbl {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: 1px;
+  }
+  .dot-pee { background: var(--pee); }
+  .dot-poo { background: var(--poo); }
   .hist-time { font-weight: 750; font-variant-numeric: tabular-nums; min-width: 50px; }
   .hist-info { flex: 1; font-size: .87rem; color: var(--muted); line-height: 1.45; }
   .hist-total { font-weight: 650; color: var(--text); }
@@ -427,6 +488,18 @@
     </div>
   </div>
 
+  <!-- Plínka -->
+  <div class="card" id="diaCard">
+    <div class="label">Plínka</div>
+    <div class="dia-last" id="diaLast">Zatím žádné přebalení</div>
+    <div class="dia-row">
+      <button class="btn-dia dia-pee" onclick="logDiaper(true,false)">Čůral<small>zaznamenat</small></button>
+      <button class="btn-dia dia-poo" onclick="logDiaper(false,true)">Kakal<small>zaznamenat</small></button>
+      <button class="btn-dia dia-both" onclick="logDiaper(true,true)">Obojí<small>zaznamenat</small></button>
+    </div>
+    <div class="dia-flash" id="diaFlash"></div>
+  </div>
+
   <!-- Denní přehled -->
   <div class="card" id="dayCard">
     <div class="label">Dnes</div>
@@ -440,6 +513,11 @@
       <div class="ratio-P" id="ratioP" style="width:0%"></div>
     </div>
     <div class="ratio-legend"><span id="legendL">Levé —</span><span id="legendP">Pravé —</span></div>
+    <div class="dia-day">
+      <div class="day-stat"><div class="v" id="diaCount">0</div><div class="k">přebalení</div></div>
+      <div class="day-stat"><div class="v" id="peeCount">0</div><div class="k"><span class="dot-lbl dot-pee"></span>čůral</div></div>
+      <div class="day-stat"><div class="v" id="pooCount">0</div><div class="k"><span class="dot-lbl dot-poo"></span>kakal</div></div>
+    </div>
   </div>
 
   <!-- Historie -->
@@ -451,10 +529,12 @@
 "use strict";
 const LS_REC = "kojeni_records_v1";
 const LS_ACT = "kojeni_active_v1";
+const LS_DIA = "tony_diapers_v1";
 const RING_C = 2 * Math.PI * 96;
 
 let records = load(LS_REC, []);
 let active = load(LS_ACT, null);
+let diapers = load(LS_DIA, []);
 
 function load(key, fallback) {
   try {
@@ -569,6 +649,34 @@ function delRecord(id) {
   render();
 }
 
+/* ---------- plínky ---------- */
+let flashTimer = null;
+function logDiaper(pee, poop) {
+  diapers.push({
+    id: Date.now() + "" + Math.floor(Math.random() * 1000),
+    ts: Date.now(),
+    pee: pee,
+    poop: poop
+  });
+  save(LS_DIA, diapers);
+  render();
+  const f = document.getElementById("diaFlash");
+  f.textContent = "Zaznamenáno ✓";
+  f.style.opacity = "1";
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { f.style.opacity = "0"; }, 1800);
+}
+function delDiaper(id) {
+  if (!confirm("Smazat tento záznam?")) return;
+  diapers = diapers.filter(d => d.id !== id);
+  save(LS_DIA, diapers);
+  render();
+}
+function diaTypeText(d) {
+  if (d.pee && d.poop) return "čůral i kakal";
+  return d.poop ? "kakal" : "čůral";
+}
+
 /* ---------- render ---------- */
 const $ = id => document.getElementById(id);
 
@@ -630,6 +738,16 @@ function renderActive() {
   }
 }
 
+function renderDiaper() {
+  const last = diapers.slice().sort((a, b) => b.ts - a.ts)[0];
+  if (!last) {
+    $("diaLast").textContent = "Zatím žádné přebalení";
+    return;
+  }
+  $("diaLast").innerHTML =
+    "naposledy <b>" + fmtAgo(Date.now() - last.ts) + "</b> v <b>" + fmtTime(last.ts) + "</b> · " + diaTypeText(last);
+}
+
 function renderDay() {
   const today = dayKey(Date.now());
   const todays = records.filter(r => dayKey(r.start) === today);
@@ -651,37 +769,59 @@ function renderDay() {
     $("legendL").textContent = "Levé —";
     $("legendP").textContent = "Pravé —";
   }
+  const todayDia = diapers.filter(d => dayKey(d.ts) === today);
+  $("diaCount").textContent = todayDia.length;
+  $("peeCount").textContent = todayDia.filter(d => d.pee).length;
+  $("pooCount").textContent = todayDia.filter(d => d.poop).length;
 }
 
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 function renderHistory() {
   const el = $("history");
-  const sorted = records.slice().sort((a, b) => b.start - a.start).slice(0, 60);
-  if (!sorted.length) {
-    el.innerHTML = '<div class="empty">Historie se objeví<br>po prvním uloženém kojení.</div>';
+  const events = records.map(r => ({ kind: "feed", ts: r.start, r: r }))
+    .concat(diapers.map(d => ({ kind: "dia", ts: d.ts, d: d })))
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 80);
+  if (!events.length) {
+    el.innerHTML = '<div class="empty">Historie se objeví<br>po prvním záznamu.</div>';
     return;
   }
   let html = "", lastDay = "";
-  for (const r of sorted) {
-    const dk = dayKey(r.start);
+  for (const ev of events) {
+    const dk = dayKey(ev.ts);
     if (dk !== lastDay) {
       html += '<div class="hist-day">' + esc(dayLabel(dk)) + "</div>";
       lastDay = dk;
     }
-    const parts = [];
-    if (r.L > 0) parts.push("levé " + fmtDur(r.L));
-    if (r.P > 0) parts.push("pravé " + fmtDur(r.P));
-    html +=
-      '<div class="hist-item">' +
-        '<div class="hist-dots">' +
-          '<span class="hist-dot' + (r.L > 0 ? " d-L" : "") + '"></span>' +
-          '<span class="hist-dot' + (r.P > 0 ? " d-P" : "") + '"></span>' +
-        "</div>" +
-        '<div class="hist-time">' + fmtTime(r.start) + "</div>" +
-        '<div class="hist-info"><span class="hist-total">' + fmtDur(r.L + r.P) + "</span> · " + esc(parts.join(" + ")) + "</div>" +
-        '<button class="hist-del" onclick="delRecord(\'' + esc(r.id) + '\')" aria-label="Smazat">✕</button>' +
-      "</div>";
+    if (ev.kind === "feed") {
+      const r = ev.r;
+      const parts = [];
+      if (r.L > 0) parts.push("levé " + fmtDur(r.L));
+      if (r.P > 0) parts.push("pravé " + fmtDur(r.P));
+      html +=
+        '<div class="hist-item">' +
+          '<div class="hist-dots">' +
+            '<span class="hist-dot' + (r.L > 0 ? " d-L" : "") + '"></span>' +
+            '<span class="hist-dot' + (r.P > 0 ? " d-P" : "") + '"></span>' +
+          "</div>" +
+          '<div class="hist-time">' + fmtTime(r.start) + "</div>" +
+          '<div class="hist-info"><span class="hist-total">Kojení ' + fmtDur(r.L + r.P) + "</span> · " + esc(parts.join(" + ")) + "</div>" +
+          '<button class="hist-del" onclick="delRecord(\'' + esc(r.id) + '\')" aria-label="Smazat">✕</button>' +
+        "</div>";
+    } else {
+      const d = ev.d;
+      html +=
+        '<div class="hist-item">' +
+          '<div class="hist-dots">' +
+            '<span class="hist-dot' + (d.pee ? " d-pee" : "") + '"></span>' +
+            '<span class="hist-dot' + (d.poop ? " d-poo" : "") + '"></span>' +
+          "</div>" +
+          '<div class="hist-time">' + fmtTime(d.ts) + "</div>" +
+          '<div class="hist-info"><span class="hist-total">Plínka</span> · ' + diaTypeText(d) + "</div>" +
+          '<button class="hist-del" onclick="delDiaper(\'' + esc(d.id) + '\')" aria-label="Smazat">✕</button>' +
+        "</div>";
+    }
   }
   el.innerHTML = html;
 }
@@ -689,6 +829,7 @@ function renderHistory() {
 function render() {
   renderLast();
   renderActive();
+  renderDiaper();
   renderDay();
   renderHistory();
 }
@@ -699,6 +840,7 @@ setInterval(() => {
 }, 1000);
 setInterval(() => {
   renderLast();
+  renderDiaper();
   renderDay();
 }, 30000);
 document.addEventListener("visibilitychange", () => {
