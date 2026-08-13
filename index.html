@@ -431,8 +431,16 @@
     gap: 3px;
     transition: color .15s, background .15s;
   }
-  .navbtn svg { width: 23px; height: 23px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-  .navbtn span { font-size: .68rem; font-weight: 650; letter-spacing: .01em; }
+  .navbtn svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .navbtn span { font-size: .6rem; font-weight: 650; letter-spacing: -.01em; }
+  .navbtn { padding: 7px 0 5px; }
+  .navbar { gap: 0; padding-left: 4px; padding-right: 4px; }
+  .mini-stats { display: flex; text-align: center; margin-top: 12px; }
+  .mini-stats .day-stat + .day-stat::before {
+    content: ""; position: absolute; left: 0; top: 15%;
+    height: 70%; width: 1px; background: var(--border);
+  }
+  .sec-hist .hist-day:first-child { margin-top: 6px; }
   .navbtn.on { color: var(--rose-text); background: var(--rose-soft); }
   .navbtn:active { transform: scale(.94); }
   body { padding-bottom: calc(86px + env(safe-area-inset-bottom)); }
@@ -509,10 +517,11 @@
   </header>
 
   <!-- ===== STRÁNKA: PŘEHLED ===== -->
+  <!-- ===== PŘEHLED ===== -->
   <div class="page" id="page-prehled">
 
-  <!-- Běžící spánek (proklik na Zapsat) -->
-  <button class="card hidden" id="sleepBanner" onclick="showTab('zapsat')"
+  <!-- Běžící stopky (proklik na sekci) -->
+  <button class="card hidden" id="sleepBanner" onclick="showTab(this.dataset.go || 'spanek')"
     style="width:100%;text-align:left;font-family:inherit;cursor:pointer;padding:15px 18px;color:var(--slp-text);background:var(--slp-soft);border:none">
     <span class="zz" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--slp);margin-right:8px;animation:pulse 2s ease-in-out infinite"></span>
     <b style="font-weight:700" id="sleepBannerText"></b>
@@ -544,6 +553,43 @@
     <div class="pills" id="lastPills"></div>
     <div class="remind-note" id="remindNote"></div>
   </div>
+
+  <!-- Denní přehled -->
+  <div class="card" id="dayCard">
+    <div class="label">Dnes</div>
+    <div class="day-stats">
+      <div class="day-stat"><div class="v" id="dayCount">0</div><div class="k">kojení</div></div>
+      <div class="day-stat"><div class="v" id="dayTotal">0 min</div><div class="k">celkem</div></div>
+      <div class="day-stat"><div class="v" id="dayAvg">—</div><div class="k">průměr</div></div>
+    </div>
+    <div class="ratio-bar" id="ratioBar">
+      <div class="ratio-L" id="ratioL" style="width:0%"></div>
+      <div class="ratio-P" id="ratioP" style="width:0%"></div>
+    </div>
+    <div class="ratio-legend"><span id="legendL">Levé —</span><span id="legendP">Pravé —</span></div>
+    <div class="slp-day">
+      <div class="day-stat"><div class="v" id="slpTotal">—</div><div class="k"><span class="dot-lbl dot-slp"></span>spánek</div></div>
+      <div class="day-stat"><div class="v" id="slpMax">—</div><div class="k">nejdelší</div></div>
+      <div class="day-stat"><div class="v" id="botTotal">—</div><div class="k"><span class="dot-lbl dot-bot"></span>lahvička</div></div>
+    </div>
+    <div class="dia-day">
+      <div class="day-stat"><div class="v" id="diaCount">0</div><div class="k">přebalení</div></div>
+      <div class="day-stat"><div class="v" id="peeCount">0</div><div class="k"><span class="dot-lbl dot-pee"></span>čůral</div></div>
+      <div class="day-stat"><div class="v" id="pooCount">0</div><div class="k"><span class="dot-lbl dot-poo"></span>kakal</div></div>
+    </div>
+    <div class="dia-day">
+      <div class="day-stat"><div class="v" id="cryCount">0</div><div class="k"><span class="dot-lbl dot-cry"></span>pláč</div></div>
+      <div class="day-stat" style="flex:2"><div class="v" id="cryTop">—</div><div class="k">nejčastěji pomohlo</div></div>
+    </div>
+  </div>
+
+  <footer id="footerInfo">Tony · data zůstávají jen v tomto telefonu</footer>
+
+  </div><!-- /page-prehled -->
+
+  <!-- ===== KOJENÍ ===== -->
+  <div class="page hidden" id="page-kojeni">
+  <div class="page-title">Kojení</div>
 
   <!-- Idle: start tlačítka -->
   <div id="idleView">
@@ -584,42 +630,44 @@
     </div>
   </div>
 
-  <!-- Denní přehled -->
-  <div class="card" id="dayCard">
+
+  <div class="card">
     <div class="label">Dnes</div>
-    <div class="day-stats">
-      <div class="day-stat"><div class="v" id="dayCount">0</div><div class="k">kojení</div></div>
-      <div class="day-stat"><div class="v" id="dayTotal">0 min</div><div class="k">celkem</div></div>
-      <div class="day-stat"><div class="v" id="dayAvg">—</div><div class="k">průměr</div></div>
-    </div>
-    <div class="ratio-bar" id="ratioBar">
-      <div class="ratio-L" id="ratioL" style="width:0%"></div>
-      <div class="ratio-P" id="ratioP" style="width:0%"></div>
-    </div>
-    <div class="ratio-legend"><span id="legendL">Levé —</span><span id="legendP">Pravé —</span></div>
-    <div class="slp-day">
-      <div class="day-stat"><div class="v" id="slpTotal">—</div><div class="k"><span class="dot-lbl dot-slp"></span>spánek</div></div>
-      <div class="day-stat"><div class="v" id="slpMax">—</div><div class="k">nejdelší</div></div>
-      <div class="day-stat"><div class="v" id="botTotal">—</div><div class="k"><span class="dot-lbl dot-bot"></span>lahvička</div></div>
-    </div>
-    <div class="dia-day">
-      <div class="day-stat"><div class="v" id="diaCount">0</div><div class="k">přebalení</div></div>
-      <div class="day-stat"><div class="v" id="peeCount">0</div><div class="k"><span class="dot-lbl dot-pee"></span>čůral</div></div>
-      <div class="day-stat"><div class="v" id="pooCount">0</div><div class="k"><span class="dot-lbl dot-poo"></span>kakal</div></div>
-    </div>
-    <div class="dia-day">
-      <div class="day-stat"><div class="v" id="cryCount">0</div><div class="k"><span class="dot-lbl dot-cry"></span>pláč</div></div>
-      <div class="day-stat" style="flex:2"><div class="v" id="cryTop">—</div><div class="k">nejčastěji pomohlo</div></div>
-    </div>
+    <div class="mini-stats" id="feedToday"></div>
   </div>
 
-  <footer id="footerInfo">Tony · data zůstávají jen v tomto telefonu</footer>
+  <div class="sec-hist" id="hist-feed"></div>
 
-  </div><!-- /page-prehled -->
+  </div><!-- /page-kojeni -->
 
-  <!-- ===== STRÁNKA: ZAPSAT ===== -->
-  <div class="page hidden" id="page-zapsat">
-  <div class="page-title">Zapsat další záznam</div>
+  <!-- ===== PLÍNKA ===== -->
+  <div class="page hidden" id="page-plinka">
+  <div class="page-title">Plínka</div>
+
+  <!-- Plínka -->
+  <div class="card" id="diaCard">
+    <div class="label">Plínka</div>
+    <div class="dia-last" id="diaLast">Zatím žádné přebalení</div>
+    <div class="dia-row">
+      <button class="btn-dia dia-pee" onclick="logDiaper(true,false)">Čůral<small>zaznamenat</small></button>
+      <button class="btn-dia dia-poo" onclick="logDiaper(false,true)">Kakal<small>zaznamenat</small></button>
+      <button class="btn-dia dia-both" onclick="logDiaper(true,true)">Obojí<small>zaznamenat</small></button>
+    </div>
+    <div class="link-center"><button class="link-btn" onclick="openSheet('diaman')">Zapsat zpětně…</button></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Dnes</div>
+    <div class="mini-stats" id="diaToday"></div>
+  </div>
+
+  <div class="sec-hist" id="hist-dia"></div>
+
+  </div><!-- /page-plinka -->
+
+  <!-- ===== SPÁNEK ===== -->
+  <div class="page hidden" id="page-spanek">
+  <div class="page-title">Spánek</div>
 
   <!-- Spánek -->
   <div class="card" id="sleepCard">
@@ -638,17 +686,18 @@
     </div>
   </div>
 
-  <!-- Plínka -->
-  <div class="card" id="diaCard">
-    <div class="label">Plínka</div>
-    <div class="dia-last" id="diaLast">Zatím žádné přebalení</div>
-    <div class="dia-row">
-      <button class="btn-dia dia-pee" onclick="logDiaper(true,false)">Čůral<small>zaznamenat</small></button>
-      <button class="btn-dia dia-poo" onclick="logDiaper(false,true)">Kakal<small>zaznamenat</small></button>
-      <button class="btn-dia dia-both" onclick="logDiaper(true,true)">Obojí<small>zaznamenat</small></button>
-    </div>
-    <div class="link-center"><button class="link-btn" onclick="openSheet('diaman')">Zapsat zpětně…</button></div>
+  <div class="card">
+    <div class="label">Dnes</div>
+    <div class="mini-stats" id="sleepToday"></div>
   </div>
+
+  <div class="sec-hist" id="hist-sleep"></div>
+
+  </div><!-- /page-spanek -->
+
+  <!-- ===== VÍC ===== -->
+  <div class="page hidden" id="page-vic">
+  <div class="page-title">Další záznamy a grafy</div>
 
   <!-- Další záznamy -->
   <div class="card">
@@ -660,18 +709,6 @@
       <button class="btn-dia dia-grw" onclick="openSheet('growth')">Míry<small>váha a délka</small></button>
     </div>
   </div>
-
-  </div><!-- /page-zapsat -->
-
-  <!-- ===== STRÁNKA: HISTORIE ===== -->
-  <div class="page hidden" id="page-historie">
-  <div class="page-title">Historie záznamů</div>
-  <div id="history"></div>
-  </div><!-- /page-historie -->
-
-  <!-- ===== STRÁNKA: GRAFY ===== -->
-  <div class="page hidden" id="page-grafy">
-  <div class="page-title">Grafy a trendy</div>
 
   <!-- Týden -->
   <div class="card" id="weekCard">
@@ -691,27 +728,43 @@
     <div class="chart-wrap"><div id="chartGrowth"></div></div>
   </div>
 
-  </div><!-- /page-grafy -->
+  <div class="sec-hist" id="hist-more"></div>
+
+  </div><!-- /page-vic -->
+
+  <!-- ===== HISTORIE ===== -->
+  <div class="page hidden" id="page-historie">
+  <div class="page-title">Všechny záznamy</div>
+  <div id="history"></div>
+  </div><!-- /page-historie -->
 
   <div class="toast" id="toast"></div>
 
   <nav class="navbar">
     <div class="navbar-inner">
       <button class="navbtn on" id="nav-prehled" onclick="showTab('prehled')">
-        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="M12 21v-6"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/></svg>
         <span>Přehled</span>
       </button>
-      <button class="navbtn" id="nav-zapsat" onclick="showTab('zapsat')">
+      <button class="navbtn" id="nav-kojeni" onclick="showTab('kojeni')">
+        <svg viewBox="0 0 24 24"><path d="M20.5 8.5c0 5-4.6 8.9-7.6 11.1a1.5 1.5 0 0 1-1.8 0C8.1 17.4 3.5 13.5 3.5 8.5A4.5 4.5 0 0 1 12 6.4a4.5 4.5 0 0 1 8.5 2.1Z"/></svg>
+        <span>Kojení</span>
+      </button>
+      <button class="navbtn" id="nav-plinka" onclick="showTab('plinka')">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16v3a9 9 0 0 1-8 8.9A9 9 0 0 1 4 9V6Z"/><path d="M9 17.5 8 21M15 17.5l1 3.5"/></svg>
+        <span>Plínka</span>
+      </button>
+      <button class="navbtn" id="nav-spanek" onclick="showTab('spanek')">
+        <svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <span>Spánek</span>
+      </button>
+      <button class="navbtn" id="nav-vic" onclick="showTab('vic')">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
-        <span>Zapsat</span>
+        <span>Víc</span>
       </button>
       <button class="navbtn" id="nav-historie" onclick="showTab('historie')">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         <span>Historie</span>
-      </button>
-      <button class="navbtn" id="nav-grafy" onclick="showTab('grafy')">
-        <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M21 20H3"/></svg>
-        <span>Grafy</span>
       </button>
     </div>
   </nav>
@@ -1517,7 +1570,7 @@ let lastSyncText = "";
 function manualSync() { syncNow(false); }
 
 /* ============ záložky ============ */
-const TABS = ["prehled", "zapsat", "historie", "grafy"];
+const TABS = ["prehled", "kojeni", "plinka", "spanek", "vic", "historie"];
 let curTab = "prehled";
 function showTab(name) {
   if (TABS.indexOf(name) < 0) name = "prehled";
@@ -1661,11 +1714,25 @@ function renderActive() {
   }
 }
 
+function renderRunBanner() {
+  const banner = $("sleepBanner");
+  const txt = $("sleepBannerText");
+  if (active) {
+    const acc = currentAcc();
+    banner.classList.remove("hidden");
+    banner.dataset.go = "kojeni";
+    txt.textContent = "Kojení běží " + fmtClock(acc.L + acc.P) + " — klepnutím zobrazíš stopky";
+  } else if (activeSleep) {
+    banner.classList.remove("hidden");
+    banner.dataset.go = "spanek";
+    txt.textContent = "Spí " + fmtDur((Date.now() - activeSleep.start) / 1000) + " — klepnutím zobrazíš stopky";
+  } else {
+    banner.classList.add("hidden");
+  }
+}
 function renderSleep() {
   const lastS = sleeps.slice().sort((a, b) => b.end - a.end)[0];
-  const banner = $("sleepBanner");
-  banner.classList.toggle("hidden", !activeSleep);
-  if (activeSleep) $("sleepBannerText").textContent = "Spí " + fmtDur((Date.now() - activeSleep.start) / 1000) + " — klepnutím zobrazíš stopky";
+  renderRunBanner();
   if (activeSleep) {
     $("sleepIdle").classList.add("hidden");
     $("sleepActive").classList.remove("hidden");
@@ -1692,6 +1759,34 @@ function renderDiaper() {
     "naposledy <b>" + fmtAgo(Date.now() - last.ts) + "</b> v <b>" + fmtTime(last.ts) + "</b> · " + diaTypeText(last);
 }
 
+function statHTML(items) {
+  return items.map(i => '<div class="day-stat"><div class="v">' + i[0] + '</div><div class="k">' + i[1] + "</div></div>").join("");
+}
+function renderSectionStats() {
+  const today = dayKey(Date.now());
+  const f = records.filter(r => dayKey(r.start) === today);
+  const totL = f.reduce((s, r) => s + r.L, 0), totP = f.reduce((s, r) => s + r.P, 0);
+  const tot = totL + totP;
+  $("feedToday").innerHTML = statHTML([
+    [f.length, "kojení"],
+    [tot ? fmtDur(tot) : "0 min", "celkem"],
+    [f.length ? fmtDur(tot / f.length) : "—", "průměr"]
+  ]);
+  const d = diapers.filter(x => dayKey(x.ts) === today);
+  $("diaToday").innerHTML = statHTML([
+    [d.length, "přebalení"],
+    [d.filter(x => x.pee).length, '<span class="dot-lbl dot-pee"></span>čůral'],
+    [d.filter(x => x.poop).length, '<span class="dot-lbl dot-poo"></span>kakal']
+  ]);
+  const sl = sleeps.filter(x => dayKey(x.start) === today);
+  const secs = sl.map(x => (x.end - x.start) / 1000);
+  const sum = secs.reduce((a, b) => a + b, 0);
+  $("sleepToday").innerHTML = statHTML([
+    [sl.length, plur(sl.length, "spánek", "spánky", "spánků")],
+    [sum ? fmtDur(sum) : "—", "celkem"],
+    [secs.length ? fmtDur(Math.max.apply(null, secs)) : "—", "nejdelší"]
+  ]);
+}
 function renderDay() {
   const today = dayKey(Date.now());
   const todays = records.filter(r => dayKey(r.start) === today);
@@ -1806,21 +1901,36 @@ function renderGrowth() {
 }
 
 /* ============ historie ============ */
-function renderHistory() {
-  const el = $("history");
-  const events = records.map(r => ({ kind: "feed", ts: r.start, o: r }))
+function allEvents() {
+  return records.map(r => ({ kind: "feed", ts: r.start, o: r }))
     .concat(diapers.map(d => ({ kind: "dia", ts: d.ts, o: d })))
     .concat(sleeps.map(s => ({ kind: "sleep", ts: s.start, o: s })))
     .concat(bottles.map(b => ({ kind: "bottle", ts: b.ts, o: b })))
     .concat(notes.map(n => ({ kind: "note", ts: n.ts, o: n })))
     .concat(growth.map(g => ({ kind: "growth", ts: g.ts, o: g })))
     .concat(cries.map(c => ({ kind: "cry", ts: c.ts, o: c })))
-    .sort((a, b) => b.ts - a.ts)
-    .slice(0, 100);
+    .sort((a, b) => b.ts - a.ts);
+}
+function renderHistoryInto(elId, kinds, limit, emptyMsg) {
+  const el = $(elId);
+  if (!el) return;
+  const events = allEvents()
+    .filter(e => !kinds || kinds.indexOf(e.kind) >= 0)
+    .slice(0, limit || 100);
   if (!events.length) {
-    el.innerHTML = '<div class="empty">Historie se objeví<br>po prvním záznamu.</div>';
+    el.innerHTML = '<div class="empty">' + emptyMsg + "</div>";
     return;
   }
+  el.innerHTML = buildHistoryHTML(events);
+}
+function renderHistory() {
+  renderHistoryInto("history", null, 150, "Historie se objeví<br>po prvním záznamu.");
+  renderHistoryInto("hist-feed", ["feed"], 40, "Zatím žádné kojení.");
+  renderHistoryInto("hist-dia", ["dia"], 40, "Zatím žádné přebalení.");
+  renderHistoryInto("hist-sleep", ["sleep"], 40, "Zatím žádný spánek.");
+  renderHistoryInto("hist-more", ["cry", "bottle", "note", "growth"], 40, "Zatím žádné další záznamy.");
+}
+function buildHistoryHTML(events) {
   let html = "", lastDay = "";
   for (const ev of events) {
     const dk = dayKey(ev.ts);
@@ -1867,7 +1977,7 @@ function renderHistory() {
         '<button class="hist-del" onclick="delEvent(\'' + ev.kind + '\',\'' + esc(o.id) + '\')" aria-label="Smazat">✕</button>' +
       "</div>";
   }
-  el.innerHTML = html;
+  return html;
 }
 
 function renderFooter() {
@@ -1877,6 +1987,7 @@ function renderFooter() {
 
 function render() {
   renderAge();
+  renderSectionStats();
   renderLast();
   renderActive();
   renderSleep();
@@ -1890,7 +2001,7 @@ function render() {
 
 render();
 setInterval(() => {
-  if (active) renderActive();
+  if (active) { renderActive(); renderRunBanner(); }
   if (activeSleep) renderSleep();
 }, 1000);
 setInterval(() => {
