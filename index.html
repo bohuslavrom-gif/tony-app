@@ -201,6 +201,16 @@
   .pill-L::before { background: var(--rose); }
   .pill-P { background: var(--blue-soft); color: var(--blue-text); }
   .pill-P::before { background: var(--blue); }
+  .wake-note {
+    margin-top: 10px;
+    font-size: .85rem;
+    font-weight: 650;
+    color: var(--slp-text);
+    background: var(--slp-soft);
+    border-radius: 12px;
+    padding: 9px 12px;
+    line-height: 1.45;
+  }
   .remind-note {
     margin-top: 10px;
     font-size: .85rem;
@@ -527,6 +537,13 @@
     <b style="font-weight:700" id="sleepBannerText"></b>
   </button>
 
+  <!-- Okno bdění -->
+  <button class="card hidden" id="wakeCard" onclick="showTab('spanek')"
+    style="width:100%;text-align:left;font-family:inherit;cursor:pointer;background:var(--slp-soft);border-color:transparent">
+    <div class="label" style="color:var(--slp-text)">Čas chystat se na spánek</div>
+    <div class="dia-last" id="wakeText" style="color:var(--slp-text)"></div>
+  </button>
+
   <!-- Věk miminka a tip dne -->
   <div class="card" id="ageCard">
     <div class="label" id="ageLabel">Miminko</div>
@@ -591,6 +608,13 @@
   <div class="page hidden" id="page-kojeni">
   <div class="page-title">Kojení</div>
 
+  <!-- Naposledy -->
+  <div class="card" id="feedLastCard">
+    <div class="label">Naposledy</div>
+    <div class="dia-last" id="feedLastLine">Zatím žádné krmení</div>
+    <div class="dia-last" id="feedLastBottle" style="margin-top:5px"></div>
+  </div>
+
   <!-- Idle: start tlačítka -->
   <div id="idleView">
     <div class="start-row">
@@ -598,6 +622,8 @@
       <button class="btn-side btn-P" id="btnStartP" onclick="startFeed('P')"><span class="reco">začít tady</span>Pravé<small>klepnutím spustíš stopky</small></button>
     </div>
     <div class="start-hint" id="startHint"></div>
+    <button class="btn" id="btnBottle" onclick="openSheet('bottle')"
+      style="width:100%;margin-top:12px;background:var(--bot-soft);color:var(--bot-text)">Lahvička – zapsat ml</button>
     <div class="link-center"><button class="link-btn" onclick="openSheet('feedman')">Zapsat kojení zpětně…</button></div>
   </div>
 
@@ -634,6 +660,7 @@
   <div class="card">
     <div class="label">Dnes</div>
     <div class="mini-stats" id="feedToday"></div>
+    <div class="mini-stats hidden" id="feedTodayBottle" style="border-top:1px solid var(--border);padding-top:12px"></div>
   </div>
 
   <div class="sec-hist" id="hist-feed"></div>
@@ -673,6 +700,7 @@
   <div class="card" id="sleepCard">
     <div class="label">Spánek</div>
     <div class="dia-last" id="sleepLast">Zatím žádný záznam spánku</div>
+    <div class="wake-note hidden" id="wakeNote"></div>
     <div id="sleepIdle">
       <button class="btn btn-sleep" onclick="startSleep()">Usnul – spustit stopky</button>
       <div class="link-center"><button class="link-btn" onclick="openSheet('sleepman')">Zapsat spánek zpětně…</button></div>
@@ -702,9 +730,8 @@
   <!-- Další záznamy -->
   <div class="card">
     <div class="label">Další záznamy</div>
-    <div class="extra-grid">
+    <div class="dia-row">
       <button class="btn-dia dia-cry" onclick="openSheet('cry')">Pláč<small>co pomohlo</small></button>
-      <button class="btn-dia dia-bot" onclick="openSheet('bottle')">Lahvička<small>ml mléka</small></button>
       <button class="btn-dia dia-note" onclick="openSheet('note')">Poznámka<small>text</small></button>
       <button class="btn-dia dia-grw" onclick="openSheet('growth')">Míry<small>váha a délka</small></button>
     </div>
@@ -888,6 +915,19 @@
           </select></div>
         </div>
         <div class="set-block">
+          <h3>Okno bdění</h3>
+          <div class="sub" style="margin-bottom:8px">Upozorní, když je miminko vzhůru déle než zvolený čas — je vhodná chvíle začít zklidňovat a chystat ho ke spánku.</div>
+          <div class="fld"><select id="wakeSel">
+            <option value="0">Vypnuto</option>
+            <option value="30">Po 30 minutách</option>
+            <option value="45">Po 45 minutách</option>
+            <option value="60">Po 1 hodině</option>
+            <option value="75">Po 1 h 15 min</option>
+            <option value="90">Po 1,5 hodině</option>
+            <option value="120">Po 2 hodinách</option>
+          </select></div>
+        </div>
+        <div class="set-block">
           <h3>Sdílení mezi telefony</h3>
           <div class="sub" style="margin-bottom:8px">Zadejte stejný rodinný kód na obou telefonech a záznamy se budou propojovat přes internet. Bez kódu zůstávají data jen v tomto telefonu.</div>
           <div class="fld"><input type="text" id="famInput" class="code-input" placeholder="rodinný kód" autocapitalize="characters" autocomplete="off"></div>
@@ -956,7 +996,7 @@ let bottles = load(LS_BOT, []);
 let notes = load(LS_NOT, []);
 let growth = load(LS_GRW, []);
 let cries = load(LS_CRY, []);
-let settings = Object.assign({ remindH: 0, family: "", birth: "", babyName: "" }, load(LS_SET, {}));
+let settings = Object.assign({ remindH: 0, family: "", birth: "", babyName: "", wakeMin: 45 }, load(LS_SET, {}));
 const CAUSE_TXT = { hlad: "hlad", nadymani: "nadýmání", plinka: "přebalení", styskani: "stýskání", nevime: "nevíme" };
 
 /* Vývojové tipy podle věku (ve dnech). Vychází ze standardních vývojových
@@ -1214,6 +1254,7 @@ function openSheet(name) {
     $("famInput").value = settings.family || "";
     $("nameInput").value = settings.babyName || "";
     $("birthInput").value = settings.birth || "";
+    $("wakeSel").value = String(settings.wakeMin === undefined ? 45 : settings.wakeMin);
     $("syncStatus").textContent = settings.family ? "Sdílení je zapnuté." : "";
   }
   if (name === "bottle") { $("mlInput").value = ""; $("mlTime").value = dtValue(Date.now()); }
@@ -1371,11 +1412,12 @@ function saveSettings() {
   settings.remindH = parseFloat($("remindSel").value) || 0;
   settings.babyName = $("nameInput").value.trim().slice(0, 30);
   settings.birth = $("birthInput").value || "";
+  settings.wakeMin = parseInt($("wakeSel").value, 10) || 0;
   const fam = $("famInput").value.trim().toUpperCase();
   const famChanged = fam !== settings.family;
   settings.family = fam;
   save(LS_SET, settings);
-  if (settings.remindH > 0 && "Notification" in window && Notification.permission === "default") {
+  if ((settings.remindH > 0 || settings.wakeMin > 0) && "Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
   }
   closeSheet();
@@ -1730,6 +1772,53 @@ function renderRunBanner() {
     banner.classList.add("hidden");
   }
 }
+function renderWake() {
+  const card = $("wakeCard"), note = $("wakeNote");
+  const lastEnd = sleeps.length ? Math.max.apply(null, sleeps.map(x => x.end)) : 0;
+  const limit = (settings.wakeMin || 0) * 60000;
+  const awake = lastEnd ? Date.now() - lastEnd : 0;
+  if (!limit || activeSleep || !lastEnd || awake < limit) {
+    card.classList.add("hidden");
+    note.classList.add("hidden");
+    if (activeSleep) wakeNotified = null;
+    return;
+  }
+  const name = settings.babyName || "Miminko";
+  const txt = name + " je vzhůru už " + fmtDur(awake / 1000) + " — je dobrý čas ztlumit světla, zklidnit se a chystat ke spánku.";
+  $("wakeText").textContent = txt;
+  note.textContent = txt;
+  card.classList.remove("hidden");
+  note.classList.remove("hidden");
+  if (wakeNotified !== lastEnd && "Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification("Tony", { body: name + " je vzhůru " + fmtDur(awake / 1000) + ". Čas začít chystat na spánek." });
+      wakeNotified = lastEnd;
+    } catch (e) {}
+  }
+}
+let wakeNotified = null;
+
+function renderFeedSection() {
+  const lastF = records.slice().sort((a, b) => b.start - a.start)[0];
+  const lastB = bottles.slice().sort((a, b) => b.ts - a.ts)[0];
+  if (lastF) {
+    const parts = [];
+    if (lastF.L > 0) parts.push("levé " + fmtDur(lastF.L));
+    if (lastF.P > 0) parts.push("pravé " + fmtDur(lastF.P));
+    $("feedLastLine").innerHTML = "Kojení v <b>" + fmtTime(lastF.start) + "</b> · trvalo <b>" + fmtDur(lastF.L + lastF.P) + "</b>" +
+      (parts.length ? " (" + esc(parts.join(" + ")) + ")" : "") +
+      "<br>tedy <b>" + fmtAgo(Date.now() - lastF.end) + "</b>";
+  } else {
+    $("feedLastLine").textContent = "Zatím žádné kojení";
+  }
+  const bl = $("feedLastBottle");
+  if (lastB) {
+    bl.innerHTML = "Lahvička v <b>" + fmtTime(lastB.ts) + "</b> · <b>" + lastB.ml + " ml</b> · " + fmtAgo(Date.now() - lastB.ts);
+    bl.classList.remove("hidden");
+  } else {
+    bl.classList.add("hidden");
+  }
+}
 function renderSleep() {
   const lastS = sleeps.slice().sort((a, b) => b.end - a.end)[0];
   renderRunBanner();
@@ -1772,6 +1861,18 @@ function renderSectionStats() {
     [tot ? fmtDur(tot) : "0 min", "celkem"],
     [f.length ? fmtDur(tot / f.length) : "—", "průměr"]
   ]);
+  const bt = bottles.filter(b => dayKey(b.ts) === today);
+  const btEl = $("feedTodayBottle");
+  if (bt.length) {
+    btEl.innerHTML = statHTML([
+      [bt.length, plur(bt.length, "lahvička", "lahvičky", "lahviček")],
+      [bt.reduce((x, b) => x + b.ml, 0) + " ml", "mléka celkem"],
+      [f.length + bt.length, "krmení celkem"]
+    ]);
+    btEl.classList.remove("hidden");
+  } else {
+    btEl.classList.add("hidden");
+  }
   const d = diapers.filter(x => dayKey(x.ts) === today);
   $("diaToday").innerHTML = statHTML([
     [d.length, "přebalení"],
@@ -1925,10 +2026,10 @@ function renderHistoryInto(elId, kinds, limit, emptyMsg) {
 }
 function renderHistory() {
   renderHistoryInto("history", null, 150, "Historie se objeví<br>po prvním záznamu.");
-  renderHistoryInto("hist-feed", ["feed"], 40, "Zatím žádné kojení.");
+  renderHistoryInto("hist-feed", ["feed", "bottle"], 40, "Zatím žádné krmení.");
   renderHistoryInto("hist-dia", ["dia"], 40, "Zatím žádné přebalení.");
   renderHistoryInto("hist-sleep", ["sleep"], 40, "Zatím žádný spánek.");
-  renderHistoryInto("hist-more", ["cry", "bottle", "note", "growth"], 40, "Zatím žádné další záznamy.");
+  renderHistoryInto("hist-more", ["cry", "note", "growth"], 40, "Zatím žádné další záznamy.");
 }
 function buildHistoryHTML(events) {
   let html = "", lastDay = "";
@@ -1988,6 +2089,8 @@ function renderFooter() {
 function render() {
   renderAge();
   renderSectionStats();
+  renderFeedSection();
+  renderWake();
   renderLast();
   renderActive();
   renderSleep();
@@ -2009,6 +2112,8 @@ setInterval(() => {
   renderLast();
   renderDiaper();
   renderSleep();
+  renderWake();
+  renderFeedSection();
   renderDay();
 }, 30000);
 setInterval(() => { if (settings.family) syncNow(false); }, 60000);
