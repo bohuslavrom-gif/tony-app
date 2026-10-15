@@ -1709,7 +1709,9 @@ function startRealtime() {
   ws.onmessage = ev => {
     try {
       const m = JSON.parse(ev.data);
-      if (m.event === "postgres_changes") queueSync(500);
+      if (m.event === "postgres_changes") queueSync(400);
+      // jakmile je odběr aktivní, doženeme i to, co vzniklo během připojování
+      if (m.event === "system" && m.payload && m.payload.status === "ok") queueSync(300);
     } catch (e) {}
   };
   ws.onerror = () => { try { ws.close(); } catch (e) {} };
