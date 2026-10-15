@@ -338,6 +338,7 @@
     font-size: 1.05rem; cursor: pointer; box-shadow: var(--shadow-sm);
   }
   .syncbtn.spin { animation: rot 1s linear infinite; }
+  .syncbtn.stale { color: var(--warn); border-color: var(--warn); }
   @keyframes rot { to { transform: rotate(360deg); } }
   .dia-flash {
     text-align: center; font-size: .84rem; font-weight: 650;
@@ -969,6 +970,9 @@ const LS_GRW = "tony_growth_v1";
 const LS_CRY = "tony_cries_v1";
 const LS_SET = "tony_settings_v1";
 const LS_DEL = "tony_pending_del_v1";
+const LS_PUSH = "tony_pushed_v1";
+const LS_WM = "tony_watermark_v1";
+const LS_DEAD = "tony_deleted_ids_v1";
 const RING_C = 2 * Math.PI * 96;
 
 const SUPA_URL = "https://xrcgxanzbzflvpvmygrd.supabase.co";
@@ -1055,6 +1059,7 @@ const TIPS = [
   { a: 730, b: 100000, t: "Dva roky a víc! Dítě mluví v krátkých větách, skáče snožmo a rádo si hraje vedle ostatních dětí. Užívejte si každý den." }
 ];
 let pendingDel = load(LS_DEL, []);
+let deadIds = load(LS_DEAD, []);
 
 function uid() { return Date.now() + "" + Math.floor(Math.random() * 100000); }
 
@@ -1237,6 +1242,7 @@ function delEvent(kind, id) {
     pendingDel.push(id);
     save(LS_DEL, pendingDel);
   }
+  if (deadIds.indexOf(id) < 0) { deadIds.push(id); save(LS_DEAD, deadIds); }
   queueSync();
   render();
 }
@@ -1310,6 +1316,7 @@ function finishEdit(kind) {
     pendingDel.push(editId);
     save(LS_DEL, pendingDel);
   }
+  if (deadIds.indexOf(editId) < 0) { deadIds.push(editId); save(LS_DEAD, deadIds); }
   editKind = null; editId = null;
   return true;
 }
@@ -1417,12 +1424,13 @@ function saveSettings() {
   const famChanged = fam !== settings.family;
   settings.family = fam;
   save(LS_SET, settings);
+  if (famChanged) { resetSyncState(); stopRealtime(); }
   if ((settings.remindH > 0 || settings.wakeMin > 0) && "Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
   }
   closeSheet();
   render();
-  if (famChanged && fam) syncNow(true);
+  if (fam) { startRealtime(); if (famChanged) syncNow(true); else queueSync(200); }
 }
 function genFamily() {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -1501,12 +1509,36 @@ function exportCSV() {
 }
 
 /* ============ synchronizace ============ */
-let syncTimer = null;
-function queueSync() {
+/* Posílá se jen to, co ještě neodešlo, a stahují se jen změny od posledně.
+   Díky tomu je synchronizace rychlá i při tisících záznamů. */
+let syncTimer = null, syncing = false, syncQueued = false;
+let lastSyncOk = parseInt(localStorage.getItem("tony_last_sync") || "0", 10) || 0;
+let lastSyncFailed = false;
+
+function pushLedger() {
+  const l = load(LS_PUSH, null);
+  if (!l || l.fam !== settings.family) return { fam: settings.family, ids: [], meta: "" };
+  return l;
+}
+function watermark() {
+  const w = load(LS_WM, null);
+  return (w && w.fam === settings.family) ? w.wm : "";
+}
+function resetSyncState() {
+  save(LS_PUSH, null);
+  save(LS_WM, null);
+  deadIds = [];
+  save(LS_DEAD, deadIds);
+  lastSyncOk = 0;
+  localStorage.removeItem("tony_last_sync");
+}
+function queueSync(delay) {
   if (!settings.family) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => syncNow(false), 2500);
+  syncTimer = setTimeout(() => syncNow(false), delay === undefined ? 1200 : delay);
 }
+function metaSig() { return (settings.birth || "") + "|" + (settings.babyName || ""); }
+
 function collectRows() {
   const fam = settings.family;
   const rows = [];
@@ -1517,9 +1549,6 @@ function collectRows() {
   notes.forEach(n => rows.push({ id: n.id, family: fam, kind: "note", ts: n.ts, data: n }));
   growth.forEach(g => rows.push({ id: g.id, family: fam, kind: "growth", ts: g.ts, data: g }));
   cries.forEach(c => rows.push({ id: c.id, family: fam, kind: "cry", ts: c.ts, data: c }));
-  if (settings.birth || settings.babyName) {
-    rows.push({ id: "meta-" + fam, family: fam, kind: "meta", ts: 0, data: { birth: settings.birth, babyName: settings.babyName } });
-  }
   return rows;
 }
 function applyRemote(remote) {
@@ -1528,11 +1557,14 @@ function applyRemote(remote) {
   Object.keys(ARR).forEach(k => ARR[k]().forEach(x => ids[x.id] = k));
   remote.forEach(row => {
     if (row.deleted) {
+      if (deadIds.indexOf(row.id) < 0) { deadIds.push(row.id); save(LS_DEAD, deadIds); }
       const k = ids[row.id];
       if (k) {
         const arr = ARR[k]().filter(x => x.id !== row.id);
         setArr(k, arr);
         save(ARR_KEY[k], arr);
+        delete ids[row.id];
+        added++;
       }
       return;
     }
@@ -1552,16 +1584,14 @@ function applyRemote(remote) {
   });
   return added;
 }
-async function syncNow(manual) {
-  const fam = manual ? ($("famInput") ? ($("famInput").value.trim().toUpperCase() || settings.family) : settings.family) : settings.family;
-  if (manual && fam && fam !== settings.family) {
-    settings.family = fam;
-    save(LS_SET, settings);
-  }
+
+async function syncNow(full) {
   if (!settings.family) {
-    if (manual) $("syncStatus").textContent = "Nejdřív zadej nebo vytvoř rodinný kód.";
+    if (full && $("syncStatus")) $("syncStatus").textContent = "Nejdřív zadej nebo vytvoř rodinný kód.";
     return;
   }
+  if (syncing) { syncQueued = true; return; }
+  syncing = true;
   const st = $("syncStatus");
   if (st) st.textContent = "Synchronizuji…";
   $("syncBtn").classList.add("spin");
@@ -1570,46 +1600,128 @@ async function syncNow(manual) {
     "Authorization": "Bearer " + SUPA_KEY,
     "Content-Type": "application/json"
   };
+  const OPT = { cache: "no-store" };
+  const UP = SUPA_URL + "/rest/v1/tony_events?on_conflict=id";
   try {
-    const rows = collectRows();
-    if (rows.length) {
-      const up = await fetch(SUPA_URL + "/rest/v1/tony_events?on_conflict=id", {
-        method: "POST",
-        headers: Object.assign({ "Prefer": "resolution=merge-duplicates" }, H),
-        body: JSON.stringify(rows)
-      });
-      if (!up.ok) throw new Error("push " + up.status);
+    const fam = settings.family;
+    const ledger = pushLedger();
+    const done = {};
+    ledger.ids.forEach(i => done[i] = 1);
+
+    /* --- 1. odeslat jen nové záznamy --- */
+    const dead = {};
+    deadIds.forEach(i => dead[i] = 1);
+    const fresh = collectRows().filter(r => !done[r.id] && !dead[r.id]);
+    const sig = metaSig();
+    if (sig !== "|" && sig !== ledger.meta) {
+      fresh.push({ id: "meta-" + fam, family: fam, kind: "meta", ts: 0, data: { birth: settings.birth, babyName: settings.babyName } });
     }
-    if (pendingDel.length) {
-      const tomb = pendingDel.map(id => ({ id: id, family: settings.family, kind: "del", ts: 0, data: {}, deleted: true }));
-      const del = await fetch(SUPA_URL + "/rest/v1/tony_events?on_conflict=id", {
+    for (let i = 0; i < fresh.length; i += 200) {
+      const chunk = fresh.slice(i, i + 200);
+      const up = await fetch(UP, Object.assign({
         method: "POST",
-        headers: Object.assign({ "Prefer": "resolution=merge-duplicates" }, H),
+        headers: Object.assign({ "Prefer": "resolution=merge-duplicates,return=minimal" }, H),
+        body: JSON.stringify(chunk)
+      }, OPT));
+      if (!up.ok) throw new Error("push " + up.status);
+      chunk.forEach(r => { if (r.kind !== "meta") ledger.ids.push(r.id); });
+      ledger.meta = sig;
+      save(LS_PUSH, { fam: fam, ids: ledger.ids, meta: ledger.meta });
+    }
+
+    /* --- 2. odeslat smazání --- */
+    if (pendingDel.length) {
+      const tomb = pendingDel.map(id => ({ id: id, family: fam, kind: "del", ts: 0, data: {}, deleted: true }));
+      const del = await fetch(UP, Object.assign({
+        method: "POST",
+        headers: Object.assign({ "Prefer": "resolution=merge-duplicates,return=minimal" }, H),
         body: JSON.stringify(tomb)
-      });
+      }, OPT));
       if (!del.ok) throw new Error("del " + del.status);
       pendingDel = [];
       save(LS_DEL, pendingDel);
     }
-    const res = await fetch(SUPA_URL + "/rest/v1/tony_events?family=eq." + encodeURIComponent(settings.family) + "&select=id,kind,ts,data,deleted", { headers: H });
+
+    /* --- 3. stáhnout jen změny od posledně --- */
+    const wm = full ? "" : watermark();
+    let url = SUPA_URL + "/rest/v1/tony_events?family=eq." + encodeURIComponent(fam) +
+      "&select=id,kind,ts,data,deleted,updated_at&order=updated_at.asc";
+    if (wm) url += "&updated_at=gt." + encodeURIComponent(wm);
+    const res = await fetch(url, Object.assign({ headers: H }, OPT));
     if (!res.ok) throw new Error("pull " + res.status);
     const remote = await res.json();
     const added = applyRemote(remote);
+    if (remote.length) {
+      const newest = remote[remote.length - 1].updated_at;
+      const t = Date.parse(newest);
+      if (!isNaN(t)) save(LS_WM, { fam: fam, wm: new Date(t - 2000).toISOString() });
+    }
+    remote.forEach(r => { if (!r.deleted && !done[r.id] && r.kind !== "meta") ledger.ids.push(r.id); });
+    save(LS_PUSH, { fam: fam, ids: ledger.ids, meta: ledger.meta });
+
+    lastSyncOk = Date.now();
+    lastSyncFailed = false;
+    localStorage.setItem("tony_last_sync", String(lastSyncOk));
     render();
-    const now = new Date();
-    lastSyncText = "sdílení zapnuto · synchronizováno " + now.getHours() + ":" + two(now.getMinutes());
-    if (st) st.textContent = "Hotovo" + (added ? " – načteno " + added + " nových záznamů." : ".");
-    renderFooter();
+    if (st) st.textContent = "Hotovo" + (added ? " – načteno " + added + " změn." : ".");
   } catch (e) {
+    lastSyncFailed = true;
     if (st) st.textContent = "Synchronizace se nepovedla — zkontroluj připojení.";
-    lastSyncText = "sdílení zapnuto · synchronizace se nepovedla";
     renderFooter();
   } finally {
+    syncing = false;
     $("syncBtn").classList.remove("spin");
+    if (syncQueued) { syncQueued = false; queueSync(300); }
   }
 }
-let lastSyncText = "";
-function manualSync() { syncNow(false); }
+function manualSync() { syncNow(true); }
+
+/* ---- okamžité doručení změn z druhého telefonu ---- */
+let rtWs = null, rtHb = null, rtRef = 0, rtRetry = null, rtTries = 0;
+function stopRealtime() {
+  clearTimeout(rtRetry); rtRetry = null;
+  clearInterval(rtHb); rtHb = null;
+  if (rtWs) { try { rtWs.onclose = null; rtWs.close(); } catch (e) {} rtWs = null; }
+}
+function startRealtime() {
+  if (!settings.family || typeof WebSocket === "undefined") return;
+  if (rtWs && (rtWs.readyState === 0 || rtWs.readyState === 1)) return;
+  stopRealtime();
+  let ws;
+  try {
+    ws = new WebSocket(SUPA_URL.replace(/^http/, "ws") + "/realtime/v1/websocket?apikey=" + SUPA_KEY + "&vsn=1.0.0");
+  } catch (e) { return; }
+  rtWs = ws;
+  ws.onopen = () => {
+    rtTries = 0;
+    ws.send(JSON.stringify({
+      topic: "realtime:tony-" + settings.family,
+      event: "phx_join",
+      payload: { config: { postgres_changes: [
+        { event: "*", schema: "public", table: "tony_events", filter: "family=eq." + settings.family }
+      ] } },
+      ref: String(++rtRef)
+    }));
+    rtHb = setInterval(() => {
+      if (ws.readyState === 1) ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(++rtRef) }));
+    }, 25000);
+  };
+  ws.onmessage = ev => {
+    try {
+      const m = JSON.parse(ev.data);
+      if (m.event === "postgres_changes") queueSync(500);
+    } catch (e) {}
+  };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+  ws.onclose = () => {
+    clearInterval(rtHb); rtHb = null;
+    if (rtWs === ws) rtWs = null;
+    if (!settings.family || document.hidden) return;
+    rtTries = Math.min(rtTries + 1, 6);
+    clearTimeout(rtRetry);
+    rtRetry = setTimeout(startRealtime, 2000 * rtTries);
+  };
+}
 
 /* ============ záložky ============ */
 const TABS = ["prehled", "kojeni", "plinka", "spanek", "vic", "historie"];
@@ -2082,8 +2194,23 @@ function buildHistoryHTML(events) {
 }
 
 function renderFooter() {
-  $("footerInfo").textContent = "Tony · " + (settings.family ? lastSyncText || "sdílení zapnuto" : "data zůstávají jen v tomto telefonu");
-  $("syncBtn").classList.toggle("hidden", !settings.family);
+  const btn = $("syncBtn");
+  btn.classList.toggle("hidden", !settings.family);
+  if (!settings.family) {
+    $("footerInfo").textContent = "Tony · data zůstávají jen v tomto telefonu";
+    btn.classList.remove("stale");
+    return;
+  }
+  let txt;
+  if (!lastSyncOk) txt = "sdílení zapnuto · zatím nesynchronizováno";
+  else {
+    const age = Date.now() - lastSyncOk;
+    txt = "sdílení zapnuto · aktuální k " + fmtTime(lastSyncOk) +
+      (age > 120000 ? " (" + fmtAgo(age) + ")" : "");
+  }
+  if (lastSyncFailed) txt += " · poslední pokus selhal";
+  $("footerInfo").textContent = "Tony · " + txt;
+  btn.classList.toggle("stale", lastSyncFailed || (lastSyncOk > 0 && Date.now() - lastSyncOk > 600000) || !lastSyncOk);
 }
 
 function render() {
@@ -2116,18 +2243,27 @@ setInterval(() => {
   renderFeedSection();
   renderDay();
 }, 30000);
-setInterval(() => { if (settings.family) syncNow(false); }, 60000);
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    render();
-    if (settings.family) syncNow(false);
-  }
-});
-window.addEventListener("online", () => { if (settings.family) syncNow(false); });
-if (settings.family) syncNow(false);
+/* Synchronizujeme při každé příležitosti, kdy je appka vidět. */
+setInterval(() => { if (settings.family && !document.hidden) syncNow(false); }, 20000);
+function wakeSync() {
+  if (!settings.family) return;
+  render();
+  startRealtime();
+  syncNow(false);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) wakeSync(); });
+window.addEventListener("pageshow", wakeSync);
+window.addEventListener("focus", wakeSync);
+window.addEventListener("online", wakeSync);
+if (settings.family) { syncNow(false); startRealtime(); }
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    // při každém otevření zkontrolujeme, jestli není novější verze appky
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) { try { reg.update(); } catch (e) {} }
+    });
+  }).catch(() => {});
 }
 </script>
 </body>

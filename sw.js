@@ -1,8 +1,12 @@
-const CACHE = "tony-v9";
+const CACHE = "tony-v10";
 const ASSETS = ["./", "index.html", "manifest.json", "icon-192.png", "icon.svg"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => {}))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", e => {
@@ -14,14 +18,26 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  if (e.request.method !== "GET") return;
+  const req = e.request;
+  if (req.method !== "GET") return;
+
+  let url;
+  try { url = new URL(req.url); } catch (err) { return; }
+
+  // Data ze serveru (Supabase apod.) nikdy neobsluhujeme ani neukládáme do cache —
+  // jinak by při výpadku sítě appka dostala stará data a myslela si, že je má aktuální.
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.indexOf("/rest/") >= 0 || url.pathname.indexOf("/realtime/") >= 0) return;
+
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
+        if (res && res.ok && res.type === "basic") {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
         return res;
       })
-      .catch(() => caches.match(e.request).then(m => m || caches.match("index.html")))
+      .catch(() => caches.match(req).then(m => m || caches.match("index.html")))
   );
 });
